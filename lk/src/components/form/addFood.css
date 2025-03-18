@@ -1,0 +1,27 @@
+.modal {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;    
+    text-align: left;
+}
+.m-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.main {
+    display: flex;
+    justify-content: space-between;
+}
+.right {
+    padding: 0px;
+    margin-left: 20px;
+}
+img{
+    border-radius: 10%;
+}
+.m-row {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+}

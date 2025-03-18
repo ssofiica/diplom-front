@@ -1,0 +1,29 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(108, 108, 108, 0.5); /* Полупрозрачный черный фон */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(3px); /* Размытие заднего фона */
+}
+.modal {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;    
+    text-align: left;
+}
+.m-row {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.m-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}

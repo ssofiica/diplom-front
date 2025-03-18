@@ -1,0 +1,20 @@
+.default-button {
+    background-color: #f4f4f4;
+    border: none; /* Убираем границу */
+    padding: 10px 20px; /* Отступы внутри кнопки */
+    white-space: nowrap; /* Запрет переноса текста */
+    border-radius: 10px; /* Закругленные углы */
+    font-size: 16px; /* Размер текста */
+    font-weight: 400;
+    cursor: pointer; /* Курсор в виде указателя */
+}
+.img-button {
+    background: none;
+    border: none; 
+    padding: 10px 20px; 
+    white-space: nowrap;
+    border-radius: 10px;
+    font-size: 16px; 
+    font-weight: 400;
+    cursor: pointer;
+}

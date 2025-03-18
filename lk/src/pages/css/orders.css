@@ -1,0 +1,17 @@
+.orders{
+    display: flex;
+    width: 90%;
+    margin: auto;
+}
+.desk{
+    width: 60%;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+.order{
+    width: 40%;
+}
+.column{
+    width: 30%;
+}

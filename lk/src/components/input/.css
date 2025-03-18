@@ -1,0 +1,25 @@
+.input-container {
+    position: relative;
+    width: 100%;
+}
+.input-field {
+    width: 100%;
+    padding: 10px 0;
+    padding-right: 30px;
+    border: none;
+    border-bottom: 1px solid #2f2f2f;
+    outline: none;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+.input-field::placeholder{
+    font-size: 16px;
+}
+.unit-inside {
+    position: absolute;
+    right: 10px; /* Позиционируем "г" внутри инпута */
+    top: 50%;
+    transform: translateY(-50%); /* Центрируем по вертикали */
+    color: #888; /* Цвет текста "г" */
+    pointer-events: none; /* Чтобы "г" не мешал вводу */
+}
