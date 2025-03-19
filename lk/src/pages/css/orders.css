@@ -4,14 +4,21 @@
     margin: auto;
 }
 .desk{
-    width: 60%;
+    width: 55%;
     display: flex;
     justify-content: space-between;
-    gap: 10px;
+    gap: 6px;
+    margin-right: 2em;
 }
 .order{
     width: 40%;
+    text-align: left
 }
 .column{
     width: 30%;
+}
+.s-row{
+    display: flex;
+    justify-content:flex-start;
+    align-items: baseline;
 }

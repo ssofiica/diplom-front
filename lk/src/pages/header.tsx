@@ -18,6 +18,7 @@ const Header: React.FC = () => {
 const styles = {
     header: {
         color: '#000',
+        marginBottom: '1.5em',
         width: '90%',
         height: '5em',
         tabSize: '16px',

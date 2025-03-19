@@ -10,7 +10,7 @@ interface ButtonProps {
   style?: React.CSSProperties;
   imgStyle?: React.CSSProperties;
   src?: string;
-  variant?: 'default' | 'danger';
+  variant?: 'default' | 'danger' | 'action';
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -21,7 +21,15 @@ const Button: React.FC<ButtonProps> = ({
   style,
   variant = 'default',
 }) => {
-  const buttonStyle = variant === 'danger' ? { backgroundColor: '#ff3c3c', color: '#fff', ...style } : style;
+  let buttonStyle = {};
+  if (variant === 'default'){
+    buttonStyle = {...style}
+  } else if (variant === 'danger'){
+    buttonStyle = { backgroundColor: '#ff3c3c', color: '#fff', ...style }
+  } else if (variant === 'action'){
+    buttonStyle = { backgroundColor: '#ffe6c4', color: '#000', ...style }
+  }
+
   return (
     <button
       type={type}
