@@ -19,7 +19,7 @@ const InputWithUnit: React.FC<InputWithUnitProps> = ({ value, onChange, placehol
         className="input-field"
         style={style}
       />
-      {value && <span className="unit-inside">, {unit}</span>}
+      {value && <span className="unit-inside"> {unit}</span>}
     </div>
   );
 };

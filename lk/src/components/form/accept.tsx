@@ -32,10 +32,10 @@ const AcceptModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, text }) 
         </div>
         <div style={{marginTop: "20px", display: 'flex', justifyContent: 'flex-start', alignItems: 'center'}}>
           <Button type="button" onClick={handleSubmit} style={{marginRight: "20px"}} variant='danger'>
-            Удалить
+            Да
           </Button>
           <div onClick={onClose}>
-            Отменить 
+            Нет 
           </div>
         </div>
       </div>

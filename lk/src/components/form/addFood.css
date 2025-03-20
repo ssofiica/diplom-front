@@ -8,6 +8,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 1em;
 }
 .main {
     display: flex;
@@ -15,7 +16,6 @@
 }
 .right {
     padding: 0px;
-    margin-left: 20px;
 }
 img{
     border-radius: 10%;

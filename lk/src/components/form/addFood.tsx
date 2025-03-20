@@ -8,20 +8,28 @@ import SelectBox from '../dropdown/dropdown';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (dish: { name: string; weight: number; price: number; category: string }) => void;
+  onSubmit: (dish: { name: string; weight: number; price: number; category: number; status: string }) => void;
+  title: string;
+  food?: any;
+  id: any;
 }
 
 const mockCategories = [
-  { value: 1, label: 'Салаты' }, { value: 2, label: 'Десерты' }, { value: 3, label: 'Пицца' },
+  { value: 1, label: 'Пицца' }, { value: 2, label: 'Салаты' }, { value: 3, label: 'Паста' },
 ]
 
-const AddFoodModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const statusMap: Record<string, boolean> = {
+  'in': false,
+  'stop': true,
+};
+
+const AddFoodModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, title, food, id }) => {
   const [name, setName] = useState('');
   const [weight, setWeight] = useState<number | ''>('');
   const [price, setPrice] = useState<number | ''>('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState<any>(id);
+  const [isChecked, setIsChecked] = useState(false); //false - in, true - stop
   const [categories, setCategories] = useState<any>(mockCategories);
-  const [isLoading, setIsLoading] = useState(true);
 
   // Загрузка категорий из API
   // useEffect(() => {
@@ -44,10 +52,30 @@ const AddFoodModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
   //   fetchCategories();
   // }, []);
 
+  useEffect(() => {
+    if (food) {
+        setName(food.name);
+        setPrice(food.price);
+        setWeight(food.weight);
+        setIsChecked(statusMap[food.status]);
+    } else {
+        setName('');
+        setPrice('');
+        setWeight('');
+        setIsChecked(false)
+    }
+}, [food]);
+
   const handleSubmit = () => {
     if (name && weight && price && category) {
-      onSubmit({ name, weight: weight, price: price, category });
+      let st = isChecked ? 'stop' : 'in'
+      const s = parseInt(category)
+      onSubmit({ name, weight, price, category:s, status:st});
       onClose();
+      setName('');
+      setPrice('');
+      setWeight('');
+      setIsChecked(false);
     }
   };
 
@@ -64,12 +92,12 @@ const AddFoodModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
     <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal">
         <div className="m-header">
-          <h2 className="title">Новое блюдо</h2>
+          <p className="title">{title}</p>
           <div onClick={onClose}>Закрыть</div>
         </div>
         <div className="main">
-          <img src="https://eda.yandex/images/3420935/bf93ac4febba46d8ab4e01218a73655b-216x188.jpeg"></img>
-          <div className="right">
+          <img src="https://eda.yandex/images/3420935/bf93ac4febba46d8ab4e01218a73655b-216x188.jpeg" alt='Фото блюда'></img>
+          <div className="right" style={{marginLeft:'20px'}}>
             <form>
               <InputWithUnit
                 value={name}
@@ -80,14 +108,14 @@ const AddFoodModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
               <div className="m-row">
                 <InputWithUnit
                   value={weight}
-                  onChange={(e) => setWeight(parseFloat(e.target.value))}
+                  onChange={(e) => setWeight(parseInt(e.target.value))}
                   placeholder="Введите вес"
                   unit="г"
                   style={{width: "8em", marginRight: '10px'}}
                 />
                 <InputWithUnit
                   value={price}
-                  onChange={(e) => setPrice(parseFloat(e.target.value))}
+                  onChange={(e) => setPrice(parseInt(e.target.value))}
                   placeholder="Введите цену"
                   unit="руб"
                   style={{width: "10em"}}
@@ -97,16 +125,23 @@ const AddFoodModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
                 <SelectBox
                   options={categories}
                   onChange={setCategory}
+                  value={id}
                 />
                 <div className="checkbox">
-                  <input type="checkbox" id="stoplist" name="stoplist"/>
+                  <input 
+                    type="checkbox"
+                    id="stoplist" 
+                    name="stoplist" 
+                    checked={isChecked}
+                    onChange={(e) => setIsChecked(e.target.checked)}
+                  />
                   <label htmlFor="stoplist">В стоп-лист</label>
                 </div>
               </div>
             </form>
           </div>
         </div>
-        <Button type="button" onClick={handleSubmit} style={{margin: "20px 0px"}}>
+        <Button type="button" onClick={handleSubmit} style={{marginTop: "20px"}}>
           Добавить 
         </Button>
       </div>

@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './.css'
 
 interface SelectBoxProps {
-  options: { value: string; label: string }[];
-  onChange: (selectedValue: string) => void;
-  placeholder?: string;
+  options: { value: any; label: string }[];
+  onChange: (selectedValue: any) => void;
+  value?: any;
 }
 
-const SelectBox: React.FC<SelectBoxProps> = ({ options, onChange, placeholder }) => {
-  const [selectedValue, setSelectedValue] = useState<string>('');
+const SelectBox: React.FC<SelectBoxProps> = ({ options, onChange, value }) => {
+  const [selectedValue, setSelectedValue] = useState<any>('');
+  useEffect(() => {
+    if (value) {
+      setSelectedValue(value)
+    } else {
+      setSelectedValue(options[0].value)
+    }
+  }, [])
 
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
