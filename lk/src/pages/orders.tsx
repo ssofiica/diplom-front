@@ -4,6 +4,7 @@ import './css/orders.css'
 import MiniOrderCard from '../components/cards/mini-order';
 import Button from '../components/button/button';
 import { mockNewOrders, mockKitchenOrders, mockReadyOrders } from './mock/orders';
+import axios from 'axios';
 
 const mockOrders = [
     { status: 'Новые', items: [
@@ -24,6 +25,8 @@ const buttonTextMap: Record<string, string> = {
     'accepted': 'Заказ готов',
     'ready': 'Заказ завершен',
 };
+
+const url = "http://82.202.138.105:8080/api"
 
 const OrderPage: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>();
@@ -65,15 +68,43 @@ const OrderPage: React.FC = () => {
     }
   }
 
-  const handleAcceptOrder = (id: number) => {
-    console.log(id)
-    //запрос
+  const handleAcceptOrder = async (id: number) => {
+    console.log(selectedOrder.status);
+    let status = '';
+    let date = new Date();
+    date.toISOString();
+    const body: Record<string, any> = {};
+    if (selectedOrder.status === 'created') {
+        body.status = 'accepted'
+        body.accepted_at = date
+    } else if (selectedOrder.status === 'accepted') {
+        body.status = 'ready'
+        body.ready_at = date
+    } else if (selectedOrder.status === 'ready') {
+        body.status = 'finished'
+        body.ready_at = date
+    }
+    try {
+        const resp = await axios.put(`${url}/order/${id}`, body);
+        return resp
+    } catch (error) {
+        console.log("Ошибка в добавлении категории", error)
+    }
     // убрать заказ из новых добавить в на кухне
     setSelectedOrder('')
   }
 
-  const handleCancelOrder = (id: number) => {
+  const handleCancelOrder = async (id: number) => {
     console.log(id)
+    let date = new Date();
+    date.toISOString();
+    const body = { status: 'canceled', canceled_at: date};
+    try {
+        const resp = await axios.put(`${url}/order/${id}`, body);
+        return resp
+    } catch (error) {
+        console.log("Ошибка в добавлении категории", error)
+    }
     //запрос
     // убрать заказ из новых добавить в на кухне
     setSelectedOrder('')
@@ -107,7 +138,9 @@ const OrderPage: React.FC = () => {
                     </p>
                     <p>Создан в {selectedOrder.created_at}</p>
                 </div>
-                {selectedOrder.status === 'accepted' && <p>Принят в {selectedOrder.accepted_at}</p>}
+                {selectedOrder.status === 'accepted' && 
+                    <p style={{fontSize: '14px'}}>Принят в {selectedOrder.accepted_at}</p>
+                }
                 {selectedOrder.status === 'ready' &&  <>
                     <p style={{fontSize: '14px'}}>Принят в {selectedOrder.accepted_at}</p>
                     <p style={{fontSize: '14px'}}>Приготовлен в {selectedOrder.ready_at}</p>

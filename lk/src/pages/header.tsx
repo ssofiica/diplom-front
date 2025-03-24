@@ -10,7 +10,9 @@ const Header: React.FC = () => {
                 <Link to="/menu" className="link">Меню</Link>
                 <Link to="/order" className="link">Заказы</Link>
             </nav>
-            <button>Кнопка</button>
+            <Link to="/info">
+                <button>Кнопка</button>
+            </Link>
     </header>
     );
 };

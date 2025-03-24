@@ -1,0 +1,54 @@
+.info{
+    width: 90%;
+    margin: auto;
+    text-align: left;
+}
+.tab{
+    padding: 10px 20px;
+    margin-right: 10px;
+}
+.tab-content{
+    margin-top: 10px;
+}
+.descriptions{
+    display: flex;
+    flex-direction: column;
+    margin-top: 1em;
+}
+.area-container{
+    position: relative;
+    width: 100%;
+}
+textarea {
+    min-height: 50px;
+    box-sizing: border-box;
+    width: 100%;
+    resize: none; /* Отключаем ручное изменение размера */
+    overflow: hidden; /* Скрываем полосу прокрутки */
+    font-size: 16px;
+    padding: 0.6em 1em;
+    border-radius: 1em;
+    border: 2px solid #d3d3d3;
+    outline: none;
+}
+.input{
+    padding: 0.6em 1em;
+    font-size: 16px;
+    border-radius: 1em;
+    border: 2px solid #e6e6e6;
+    outline: none;
+}
+.input:hover, textarea:hover{
+    background-color: #f4f4f4;
+}
+.input:focus, textarea:focus{
+    background-color: #f4f4f4;
+    border-color:#8f9dbb;
+}
+.symbols{
+    position: absolute; /* Абсолютное позиционирование внутри контейнера */
+    bottom: 0.5em; /* Отступ от нижнего края */
+    right: 1.1em;
+    font-size: 12px; 
+    padding: 0.6em 1em;
+}

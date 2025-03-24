@@ -45,3 +45,10 @@
   font-size: 20px;
   font-weight: 500;
 }
+
+.scroll-container{
+  overflow-y: scroll;
+}
+.scroll-container::-webkit-scrollbar {
+  display: none;
+}

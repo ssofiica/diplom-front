@@ -114,7 +114,7 @@ const MenuPage: React.FC = () => {
   const handleEditFood = async (dish: { name: string; weight: number; price: number; category: number; status: string }) => {
     console.log('Редактирование блюда:', dish);
     const response = await editFood(selectedFood.id, dish);
-    
+    //TODO: дописать изменение записи в таблице
     // Здесь можно добавить логику для сохранения блюда
   };
 
@@ -211,6 +211,7 @@ const MenuPage: React.FC = () => {
   const handleChangeFoodStatus = async (id: number, status: string) => {
     console.log(id, status)
     const response = await changeFoodStatus(id, status);
+    console.log(response)
     if (response?.status === 200){
       setSelectedCategory((ctg: any) => ({
         ...ctg,
@@ -301,13 +302,18 @@ const MenuPage: React.FC = () => {
               <p className="row-style" style={{textAlign: 'center'}}>{item.weight}</p>
               <p className="row-style" style={{textAlign: 'center'}}>{item.price}</p>
               <span className="row-style">
-                <Button onClick={()=>{
-                  setSelectedFood(item)
-                  handleChangeFoodStatus(item.id, status)
+                {status === 'in' && 
+                  <Button onClick={()=>{
+                    setSelectedFood(item)
+                    handleChangeFoodStatus(item.id, 'stop')
+                  }}>В стоп-лист</Button>
                 }
-                }>
-                  {status === 'in' ? 'В стоп-лист': 'Вернуть в меню'}
-                </Button>
+                {status === 'stop' && 
+                  <Button onClick={()=>{
+                    setSelectedFood(item)
+                    handleChangeFoodStatus(item.id, 'in')
+                  }}>Вернуть в меню</Button>
+                }
               </span>
               <span className="row-style">
                 <ImgButton src={edit} imgStyle={{height: "1.2em"}} onClick={() => {
