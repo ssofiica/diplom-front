@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {mockBasket} from './mock/main';
 import Button from '../components/button/button';
@@ -28,6 +28,9 @@ interface Info {
 
 const BasketPage: React.FC = () => {
     const [basket, setBasket] = useState<any>(mockBasket);
+    const [comment, setComment] = useState<string>('');
+    const [type, setType] = useState<string>(mockBasket.type);
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const navigate = useNavigate();
 
     const fetchBasket = async () => {
@@ -35,7 +38,13 @@ const BasketPage: React.FC = () => {
             const response = await axios.get(`${url}/order/basket`)
             if (response.status === 200) {
                 setBasket(response.data)
-            }
+                setComment(response.data?.comment)
+                if (response.data.type) {
+                    setType(response.data.type)
+                } else {
+                    setType('pickup')
+                }
+            } 
         } catch (error) {
             console.log("Ошибка в получении корзины", error)
         }
@@ -46,6 +55,11 @@ const BasketPage: React.FC = () => {
             const response = await axios.post(`${url}/order/basket`, body)
             if (response.status === 200) {
                 setBasket(response.data)
+                if (response.data.type) {
+                    setType(response.data.type)
+                } else {
+                    setType('pickup')
+                }
             }
         } catch (error) {
             console.log("Ошибка в получении корзины", error)
@@ -53,11 +67,12 @@ const BasketPage: React.FC = () => {
     };
 
     useEffect(() => {
-        console.log(basket.type)
         fetchBasket();
+        console.log(type)
     }, []);
 
     const handlePay = async () => {
+        console.log()
         try {
             const response = await axios.post(`${url}/order/pay`)
             if (response.status === 200) {
@@ -69,7 +84,21 @@ const BasketPage: React.FC = () => {
         }
     };
 
-    return(
+    const handleComment = async () => {
+        if (comment != basket.comment) {
+            console.log(comment)
+            handleUpdateInfoBasket({"comment": comment})
+        }
+    };
+
+    const handleInput = () => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+    };
+
+    return (
     <div className="basket">
         <div className="basket-header">
             <BackButton style={{borderRadius: '50%', padding: '10px 10px 6px 10px'}}>
@@ -95,28 +124,31 @@ const BasketPage: React.FC = () => {
             )}
         </div>
         <div className="basket-info">
+            <div className='total'>
+                <p>Сумма заказа</p>
+                <p>{basket.sum} ₽</p>
+            </div>
             <textarea
-                /*ref={(el) =>{ textareaRefs.current[index] = el!}}*/
-                value={basket.comment}
-                /*onInput={(e) => handleInput(e, index)}*/
+                ref={textareaRef}
+                value={comment}
+                onInput={handleInput}
+                onChange={(e) => setComment(e.target.value)}
+                onBlur={handleComment}
                 placeholder="Комменатрий к заказу"
-            />
-            <input
-                type="text"
-                value={basket.comment}
-                onChange={(e) => handleUpdateInfoBasket({comment: e.target.value})}
-                placeholder="Комментарий к заказу"
-                className="input-field"
+                style={{marginTop: '10px'}}
             />
             <div className="order-type">
-                {basket.type === 'pickup' ? 
-                    <div onChange={(e) => handleUpdateInfoBasket({type: 'pickup'})}>Самовывоз</div> 
-                    : <p style={{margin: '0 12px 0 0'}} className="selected" onChange={(e) => handleUpdateInfoBasket({type: 'pickup'})}>Самовывоз</p>}
-                {basket.type === 'delivery' ? 
+                {type === 'pickup' ? 
+                    <div
+                        className="selected">
+                        Самовывоз</div> 
+                    : <div onClick={(e) => handleUpdateInfoBasket({type: 'pickup'})}>
+                        Самовывоз</div>}
+                {type === 'delivery' ? 
                     <div 
-                        onChange={(e) => handleUpdateInfoBasket({type: 'delivery'})}
+                        onClick={(e) => handleUpdateInfoBasket({type: 'delivery'})}
                         className="selected">Доcтавка</div> 
-                    : <p>Доставка</p>}
+                    : <div>Доставка</div>}
             </div>
             {basket.type === 'delivery' &&
                 <input
@@ -125,11 +157,12 @@ const BasketPage: React.FC = () => {
                     onChange={(e) => handleUpdateInfoBasket({address: e.target.value})}
                     placeholder="Адрес доставки"
                     className="input-field"
+                    style={{marginTop: '14px'}}
                 />
             }
-            <div style={{display: 'flex', alignItems: 'center'}}>
-                <span>Итого {basket.sum} ₽</span>
-                <Button onClick={handlePay}>Оформить</Button>
+            <div style={{display: 'flex', alignItems: 'center', marginTop: '14px'}}>
+                <p style={{whiteSpace: 'nowrap', marginRight: '10px'}}>Итого {basket.sum} ₽</p>
+                <Button onClick={handlePay} style={{width: '100%'}}>Оформить</Button>
             </div>
         </div>
         </div>

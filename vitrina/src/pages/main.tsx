@@ -9,6 +9,7 @@ import basketBlack from '../assets/basket-black.svg'
 
 const url = "http://82.202.138.105:8081/api"
 const rest_id = 1
+const name = "София"
 
 interface Info {
     id: number,
@@ -215,6 +216,7 @@ const MainPage: React.FC = () => {
     return (<>
         <div className="main-header">
             <p style={{fontSize: "28px", margin: '12px 0'}}>{info?.name} </p>
+            <div style={{display: 'flex'}}>
             <Link to="/basket">
                 <Button 
                     style={{
@@ -222,14 +224,16 @@ const MainPage: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         padding: '0em 1.8em',
-                    borderRadius: '1.8em',
-                }}>
+                        borderRadius: '1.8em',
+                    }}>
                     <img src={basketBlack} style={{marginRight: '15px', color: '#141414'}}/>
                     <p style={{color: '#141414', fontWeight: 700, fontSize: '18px', margin: '0.6em 0em'}}>
                         {basket.sum} ₽
                     </p>
                 </Button>
             </Link>
+            <Link to="/profile">{name}</Link>
+            </div>
         </div>
         <div className="main-info">
             <p>{info?.address} {info?.phone}</p>
@@ -238,6 +242,7 @@ const MainPage: React.FC = () => {
             ))}
         </div>
         <div>
+            <p style={{fontSize: '24px', fontWeight: 500, margin: '10px 0'}}>Меню</p>
             <div className="category-container">
             {menu.map((item: any) => (
                 <div key={item.id} onClick={() => handleItemClick(item.id)}>

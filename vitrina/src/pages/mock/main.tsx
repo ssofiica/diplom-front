@@ -29,7 +29,7 @@ export const mockInfoData = {
 export const mockBasket = {
   id: 5,
   user_id: 1,  
-  type: "delivery",
+  type: "pickup",
   status: 'draft',
   sum: 1600, 
   restaurant_id: 1,
