@@ -21,7 +21,7 @@ const MainFoodCard: React.FC<MainFoodCardProps> = ({style, id, name, price,
   return (
     <div className='main-food' style={style}>
       <div className="part">
-        <img src={def} alt={name} className="food-card-image"/>
+        <img src={img} alt={name} className="food-card-image"/>
         <span className="name" style={{}}>{name}</span>
       </div>
       <div className='part'>

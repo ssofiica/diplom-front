@@ -175,10 +175,17 @@ const MenuPage: React.FC = () => {
 
   const fetchMenu = async () => {
     try {
-      const resp = await axios.get(`${url}/menu`)
-      setMenu(resp.data)
-      setSelectedCategory(resp.data[0])
-      setActiveCategoryIndex(resp.data[0].id)
+      const resp = await axios.get(`${url}/menu/category-list`)
+      if (resp?.status === 200){
+        setMenu(resp.data)
+        setSelectedCategory(resp.data[0])
+        setActiveCategoryIndex(resp.data[0].id)
+        const response = await getFoodByCategory(resp.data[0].id)
+        console.log(response?.data)
+        if (response?.status === 200){
+          setSelectedCategory((prev: any) => ({...prev, items: response.data}));
+        }
+      }
     } catch (error) {
       console.log("Ошибка в получении меню", error)
     }
@@ -188,12 +195,21 @@ const MenuPage: React.FC = () => {
       fetchMenu();
   }, []);
 
-  const handleItemClick = (id: number) => {
+  const handleItemClick = async (id: number) => {
     setActiveCategoryIndex(id)
-    const selectedItem = menu.find(item => item.id === id);
-    if (selectedItem) {
-      setSelectedCategory(selectedItem);
+    const resp = await getFoodByCategory(id)
+    if (resp?.status === 200){
+      setSelectedCategory((prev: any) => ({...prev, items: resp.data}));
       setStatus(status)
+    }
+  };
+
+  const getFoodByCategory = async (id: number) => {
+    try {
+      const resp = await axios.get(`${url}/menu/${id}`);
+      return resp
+    } catch (error) {
+      console.log("Ошибка в получении блюд категории", error)
     }
   };
 
@@ -294,7 +310,7 @@ const MenuPage: React.FC = () => {
             <p className="th-style"> </p>
             <p className="th-style"> </p>
           </div>
-          {selectedCategory.items.map((item:any) => (
+          {selectedCategory.items?.map((item:any) => (
             <div key={item.id} className="row">
               {/* TODO: вставить src */}
               <img className="img" alt='Фотка'></img>

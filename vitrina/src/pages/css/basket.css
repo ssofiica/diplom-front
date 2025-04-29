@@ -21,7 +21,8 @@
     transform: translateX(-50%);
 }
 .basket-main{
-    margin-top: 50px;
+    width: 90%;
+    margin: 75px auto;
 }
 .basket-food{
     flex-direction: column;

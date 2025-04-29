@@ -1,0 +1,34 @@
+.archive{
+    font-size: 18px;
+    font-weight: 500;
+    margin-top: 40px;
+}
+.archive-mini{
+    flex-direction: column;
+}
+.archive-order{
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+@media (min-width: 600px) {
+    .archive{
+        display: flex;
+        gap: 50px;
+    }
+}
+.o-row{
+    display: flex;
+    justify-content: space-between
+}
+.o-row img{
+    width: 100px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+.status{
+    background-color: #ccf297;
+    padding: 0.2em 1.2em;
+    border-radius: 0.8em;
+    font-weight: 600;
+}

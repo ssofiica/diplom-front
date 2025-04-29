@@ -6,8 +6,10 @@ import MainFoodCard from '../components/cards/food-main/food-main';
 import { Link } from 'react-router-dom';
 import "./css/main.css"
 import basketBlack from '../assets/basket-black.svg'
+import MiniOrderCard from '../components/cards/mini-order/mini-order';
+import {url, minio, statuses, types} from '../const/const'
+import TextImageDisplay from '../components/part/infobar/infobar';
 
-const url = "http://82.202.138.105:8081/api"
 const rest_id = 1
 const name = "София"
 
@@ -34,11 +36,21 @@ interface Food {
 
 const MainPage: React.FC = () => {
     const [info, setInfo] = useState<Info>(mockInfoData);
-    const [menu, setMenu] = useState<any[]>(mockMenuData);
+    //const [menu, setMenu] = useState<any[]>(mockMenuData);
+    const [menu, setMenu] = useState<any[]>([]);
     const [current, setCurrent] = useState<any[]>([]);
-    const [basket, setBasket] = useState<any>(mockBasket);
-    const [selectedCategory, setSelectedCategory] = useState<any>(mockMenuData[1]);
-    const [activeCategoryIndex, setActiveCategoryIndex] = useState<number>(mockMenuData[1].id);
+    const [basket, setBasket] = useState<any>('');
+    const [selectedCategory, setSelectedCategory] = useState<any>('');
+    const [activeCategoryIndex, setActiveCategoryIndex] = useState<number>();
+    const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+    const toggleMenu = () => {
+        setIsMenuOpen(prev => !prev);
+    };
+
+    const handleMenuItemClick = () => {
+        setIsMenuOpen(false);
+    };
 
     const fetchInfo = async () => {
         try {
@@ -65,6 +77,10 @@ const MainPage: React.FC = () => {
             //TODO: проверить url
             const response = await axios.get(`${url}/order/basket`)
             if (response.status === 200) {
+                if (response.data === "У вас нет корзины") {
+                    setBasket('')
+                    return
+                }
                 setBasket(response.data)
             }
         } catch (error) {
@@ -76,7 +92,9 @@ const MainPage: React.FC = () => {
         try {
             const response = await axios.get(`${url}/menu`)
             if (response.status === 200) {
-                setBasket(response.data)
+                setMenu(response.data)
+                setSelectedCategory(response.data[0])
+                setActiveCategoryIndex(response.data[0].id)
             }
         } catch (error) {
             console.log("Ошибка в получении меню", error)
@@ -87,6 +105,7 @@ const MainPage: React.FC = () => {
         try {
             const response = await axios.get(`${url}/order/current`)
             if (response.status === 200) {
+                console.log(response.data)
                 setCurrent(response.data)
             }
         } catch (error) {
@@ -95,14 +114,14 @@ const MainPage: React.FC = () => {
     };
     
     useEffect(() => {
-        fetchInfo();
+        //fetchInfo();
         fetchMenu();
         fetchBasket();
         fetchCurrent();
     }, []);
     
     const getCountInBasket = (foodId:  number) => {
-        const item = basket.food.find((food: any) => food.id === foodId);
+        const item = basket && basket.food && basket.food.find((food: any) => food.item.id === foodId);
         return item ? item.count : 0;
     };
 
@@ -111,7 +130,7 @@ const MainPage: React.FC = () => {
         const selectedItem = menu.find(item => item.id === id);
         if (selectedItem) {
             selectedItem.items.forEach((food:any) => {
-                const basketItem = mockBasket.food.find(b => b.id === food.id);
+                const basketItem = mockBasket.food.find(b => b.item.id === food.id);
                 if (basketItem) {
                     food.count = basketItem.count;
                 } else {
@@ -128,7 +147,9 @@ const MainPage: React.FC = () => {
                 food_id: id,
                 count: count,
             }
+            console.log(body)
             const response = await axios.post(`${url}/order/food`, body)
+            console.log(response)
             return response
         } catch (error) {
             console.log("Ошибка в получении корзины", error)
@@ -139,28 +160,7 @@ const MainPage: React.FC = () => {
         console.log(`Добавить блюдо ${id} в корзину`);
         const response = await ChangeFoodCountInBasket(food.id, food.count+1)
         if (response?.status === 200) {
-            //setBasket(response.data)
-        }
-        //TODO: мб надо убрать кусок ниже
-        const exist = basket.food.find((food:any) => food.id === id)
-        const c = food.count
-        if (exist) {
-            setBasket((prev: any) => ({
-                ...prev,
-                food: prev.food.map((item: any) => 
-                  item.id === id
-                    ? { ...item, count: c + 1 }
-                    : item
-                ),
-                sum: prev.sum + food.price,
-            }));
-        } else {
-            console.log(food)
-            setBasket((prev:any) => ({
-                ...prev,
-                food: [...prev.food, { id: id, name: food.name, price: food.price, weight: food.weight, img_url: food.img,  count: 1 }],
-                sum: prev.sum + food.price
-            }));
+            setBasket(response.data)
         }
         setSelectedCategory((cat: any) => ({
             ...cat,
@@ -175,33 +175,13 @@ const MainPage: React.FC = () => {
     
     const handleRemoveFromBasket = async (id: number, food:any) => {
         console.log(`Удалить блюдо ${id} из корзины`);
-        const exist = basket.food.find((f:any) => f.id === id);
+        const exist = basket.food.find((f:any) => f.item.id === id);
         if (!exist) return;
 
         const response = await ChangeFoodCountInBasket(food.id, food.count-1)
         if (response?.status === 200) {
-            //setBasket(response.data)
-        }
-        //TODO мб и не надо менять баскет, ведь с бэка приходит инфа
-
-        if (exist.count > 1) {
-            // Уменьшаем количество, если больше 1
-            setBasket((prev:any) => ({
-              ...prev,
-              food: prev.food.map((f:any) =>
-                f.id === id 
-                  ? { ...f, count: food.count - 1 } 
-                  : f
-              ),
-              sum: prev.sum - food.price
-            }));
-        } else {
-            // Удаляем блюдо, если количество 1
-            setBasket((prev:any) => ({
-              ...prev,
-              food: prev.food.filter((f: any) => f.id !== id),
-              sum: prev.sum - food.price
-            }));
+            console.log()
+            setBasket(response.data)
         }
         setSelectedCategory((cat: any) => ({
             ...cat,
@@ -213,11 +193,15 @@ const MainPage: React.FC = () => {
         }));
     };
 
+    const handleCurrentOrderClick = (id: number) => {
+        
+    };
+
     return (<>
         <div className="main-header">
             <p style={{fontSize: "28px", margin: '12px 0'}}>{info?.name} </p>
-            <div style={{display: 'flex'}}>
-            <Link to="/basket">
+            <div style={{display: 'flex', alignItems: 'center'}}>
+            {basket && <Link to="/basket">
                 <Button 
                     style={{
                         background: '#f4f4f4',
@@ -231,18 +215,45 @@ const MainPage: React.FC = () => {
                         {basket.sum} ₽
                     </p>
                 </Button>
-            </Link>
-            <Link to="/profile">{name}</Link>
+                </Link>}
+                <div style={{ position: 'relative', marginLeft: '10px' }}>
+                    <p onClick={toggleMenu}>{name}</p>
+                </div>
+                {isMenuOpen && (
+                <div className="menu">
+                    <Link to="/profile" style={{color: '#141414'}}>Мои заказы</Link>
+                    <div onClick={handleMenuItemClick} style={{marginTop: '10px', cursor: 'pointer' }}>
+                        Выйти
+                    </div>
+                </div>
+                )}
             </div>
         </div>
-        <div className="main-info">
-            <p>{info?.address} {info?.phone}</p>
-            {info?.descripArr.map((item: any) => (
-                <p>{item}</p>
+        {current && <p></p>}
+        <div className="main-current">
+            {current.map((order: any) => (
+                <MiniOrderCard
+                    onClick={handleCurrentOrderClick}
+                    status={statuses[order.status]}
+                    number={order.id}
+                    sum={order.sum}
+                    date={order.created_at}
+                    variant={types[order.type]}
+                />
             ))}
         </div>
-        <div>
-            <p style={{fontSize: '24px', fontWeight: 500, margin: '10px 0'}}>Меню</p>
+        <div className="main-info">
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <p style={{fontSize: '28px', fontWeight:600, textAlign: 'left'}}>{info?.name}</p>
+                <div>
+                    <p style={{marginTop: '8px', color:'#7b7b7b'}}>{info?.address}</p>
+                    <p style={{color:'#7b7b7b'}}>{info?.phone}</p>
+                </div>
+            </div>
+            <TextImageDisplay descrip={info?.descripArr} img={info?.imgArr}/>
+        </div>
+        <div className="main-menu">
+            <p style={{fontSize: '24px', fontWeight: 600, margin: '20px 0 10px'}}>Меню</p>
             <div className="category-container">
             {menu.map((item: any) => (
                 <div key={item.id} onClick={() => handleItemClick(item.id)}>
@@ -255,14 +266,14 @@ const MainPage: React.FC = () => {
             ))}
             </div>
             <div className="food-container">
-            {selectedCategory.items.map((food: any) => (<>
+            {selectedCategory && selectedCategory.items.map((food: any) => (<>
                 <MainFoodCard
                     key={food.id}
                     id={food.id}
                     name={food.name}
                     price={food.price}
                     weight={food.weight}
-                    img={food.img_url}
+                    img={minio+food.img_url}
                     count={getCountInBasket(food.id)}
                     onAdd={handleAddToBasket}
                     onRemove={handleRemoveFromBasket}

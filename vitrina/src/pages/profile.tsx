@@ -1,14 +1,13 @@
 import axios from 'axios';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {mockBasket} from './mock/main';
 import Button from '../components/button/button';
 import BackButton from '../components/button/back';
-import './css/basket.css'
+import './css/profile.css'
 import back from '../assets/arrow-left.svg'
-import BasketFoodCard from '../components/cards/food-basket/food-basket.tsx';
+import MiniOrderCard from '../components/cards/mini-order/mini-order.tsx';
+import {url, minio, statuses, types} from '../const/const'
 
-const url = "http://82.202.138.105:8081/api"
 const rest_id = 1
 
 interface Food {
@@ -26,62 +25,121 @@ interface Info {
     comment: string,
 }
 
+const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }) + ' ' + date.toLocaleDateString('ru-RU');
+};
+
 const ProfilePage: React.FC = () => {
-    const [basket, setBasket] = useState<any>(mockBasket);
+    const [orders, setOrders] = useState<[]>([]);
+    const [selectedOrder, setSelectedOrder] = useState<any>('');
+    const [selectedOrderIndex, setSelectedOrderIndex] = useState<any>('');
 
-    const fetchBasket = async () => {
+    const fetchArchive = async () => {
         try {
-            const response = await axios.get(`${url}/order/basket`)
+            const response = await axios.get(`${url}/order/archive`)
             if (response.status === 200) {
-                setBasket(response.data)
-            } 
-        } catch (error) {
-            console.log("Ошибка в получении корзины", error)
-        }
-    };
-
-    const handleUpdateInfoBasket = async (body: {}) => {
-        try {
-            const response = await axios.post(`${url}/order/basket`, body)
-            if (response.status === 200) {
-                setBasket(response.data)
+                setOrders(response.data)
+                let id = response.data[0].id
+                setSelectedOrderIndex(id)
+                const resp = await getOrderByID(id)
+                if (resp?.status === 200) {
+                    console.log(resp.data)
+                    setSelectedOrder(resp.data)
+                }
             }
         } catch (error) {
-            console.log("Ошибка в получении корзины", error)
+            console.log("Ошибка в получении заказов", error)
         }
     };
 
     useEffect(() => {
-        fetchBasket();
+        fetchArchive();
     }, []);
 
+    const getOrderByID = async (id:number) => {
+        try {
+            const response = await axios.get(`${url}/order/${id}`)
+            return response
+        } catch (error) {
+            console.log("Ошибка в получении заказа", error)
+        }
+    };
+
+    const handleCurrentOrderClick = async (id: number) => {
+        try {
+            const response = await getOrderByID(id)
+            if (response?.status === 200) {
+                setSelectedOrder(response.data)
+            }
+        } catch (error) {
+            console.log("Ошибка в получении заказа", error)
+        }
+    };
+
     return (
-    <div className="basket">
-        <div className="basket-header">
-            <BackButton style={{borderRadius: '50%', padding: '10px 10px 6px 10px'}}>
-                <img src={back}/>
-            </BackButton>
-            <p>Корзина</p>
-        </div>
-        <div className="basket-main">
-        <div className="basket-food">
-            {basket.food.map((f: any) =>
-            <div className="" key={f.id}>
-                <BasketFoodCard
-                    id={f.id}
-                    name={f.name}
-                    img={f.img}
-                    price={f.price}
-                    weight={f.weight}
-                    count={f.count}
-                    onAdd={fetchBasket}
-                    onRemove={fetchBasket}
-                />
-            </div>
+    <>
+    <div style={{display:'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px'}}>
+        <BackButton style={{borderRadius: '50%', padding: '10px 10px 6px 10px'}}>
+            <img src={back}/>
+        </BackButton>
+        <p style={{fontSize: '24px', fontWeight: '600'}}>Мои заказы</p>
+        <p style={{width:'44px'}}> </p>
+    </div>
+    <div className="archive">
+        <div className="archive-mini">
+            {orders.map((order: any) => (
+                <MiniOrderCard
+                onClick={handleCurrentOrderClick}
+                status={statuses[order.status]}
+                number={order.id}
+                sum={order.sum}
+                variant={types[order.type]}
+                date={order.created_at}
+                style={{width: '220px'}}
+                />)
             )}
         </div>
+        <div className="archive-order">
+            <div>
+                <div style={{display:'flex', alignItems: 'center'}}>
+                    <p style={{fontSize: '20px', fontWeight: '600', marginRight: '1em'}}>
+                        Заказ №{selectedOrder.id}
+                    </p>
+                    <p className="status">{statuses[selectedOrder.status]}</p>
+                </div>
+                <p style={{marginTop: '10px'}}>Создан в {formatDate(selectedOrder.created_at)}</p>
+                <div className="s-row" style={{marginTop: '10px', display: 'flex'}}>
+                    <p style={{color:'#7b7b7b'}}>
+                        {types[selectedOrder.type]}
+                    </p>   
+                    {selectedOrder.address && <p style={{color: '#2e2e2e'}}>: {selectedOrder.address}</p>}
+                </div>
+                {selectedOrder.comment && (<>
+                    <p style={{marginTop: '5px'}}>Комментарий:</p>
+                    <p>{selectedOrder.comment}</p>
+                </>)}
+            </div>
+            <div style={{display:'flex', margin: '15px 0px'}}>
+                <p style={{marginRight: '1em'}}>Сумма заказа</p>
+                <p style={{fontWeight:600}}>{selectedOrder.sum}  ₽</p>
+            </div>
+            <div>
+                {selectedOrder.food?.map((f:any) => (
+                    <div className="o-row" style={{marginBottom: '14px'}}>
+                        <img src={minio+f.item.img_url} alt={f.item.name}/>
+                        <p style={{marginLeft: '10px'}}>{f.item.name}</p>
+                        <p style={{marginLeft: '10px'}}>{f.count} x {f.item.price}  ₽</p>
+                    </div>
+                ))}
+            </div>
         </div>
     </div>
+    </>
     )
 };
 export default ProfilePage;

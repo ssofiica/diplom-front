@@ -20,7 +20,7 @@ const BasketFoodCard: React.FC<MainFoodCardProps> = ({style, id, name, price,
 
   return (
     <div className='basket-food-card' style={style}>
-        <img src={def} alt={name} className="basket-card-image"/>
+        <img src={img} alt={name} className="basket-card-image"/>
         <div className='part' style={{textAlign: 'left'}}>
             <span className="name" style={{marginTop: '2px'}}>{name}</span>
             <span className="weight">{weight} г</span>

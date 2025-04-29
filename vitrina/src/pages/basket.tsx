@@ -7,8 +7,8 @@ import BackButton from '../components/button/back';
 import './css/basket.css'
 import back from '../assets/arrow-left.svg'
 import BasketFoodCard from '../components/cards/food-basket/food-basket.tsx';
+import {url, minio} from '../const/const'
 
-const url = "http://82.202.138.105:8081/api"
 const rest_id = 1
 
 interface Food {
@@ -27,7 +27,8 @@ interface Info {
 }
 
 const BasketPage: React.FC = () => {
-    const [basket, setBasket] = useState<any>(mockBasket);
+    //const [basket, setBasket] = useState<any>(mockBasket);
+    const [basket, setBasket] = useState<any>('');
     const [comment, setComment] = useState<string>('');
     const [type, setType] = useState<string>(mockBasket.type);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -38,13 +39,14 @@ const BasketPage: React.FC = () => {
             const response = await axios.get(`${url}/order/basket`)
             if (response.status === 200) {
                 setBasket(response.data)
+                console.log(response.data)
                 setComment(response.data?.comment)
                 if (response.data.type) {
                     setType(response.data.type)
                 } else {
                     setType('pickup')
                 }
-            } 
+            }
         } catch (error) {
             console.log("Ошибка в получении корзины", error)
         }
@@ -52,9 +54,10 @@ const BasketPage: React.FC = () => {
 
     const handleUpdateInfoBasket = async (body: {}) => {
         try {
-            const response = await axios.post(`${url}/order/basket`, body)
+            const response = await axios.post(`${url}/order/info`, body)
             if (response.status === 200) {
-                setBasket(response.data)
+                console.log(response.data)
+                //setBasket(response.data)
                 if (response.data.type) {
                     setType(response.data.type)
                 } else {
@@ -68,7 +71,6 @@ const BasketPage: React.FC = () => {
 
     useEffect(() => {
         fetchBasket();
-        console.log(type)
     }, []);
 
     const handlePay = async () => {
@@ -76,7 +78,7 @@ const BasketPage: React.FC = () => {
         try {
             const response = await axios.post(`${url}/order/pay`)
             if (response.status === 200) {
-                setBasket({})
+                setBasket('')
                 navigate("/");
             }
         } catch (error) {
@@ -108,19 +110,22 @@ const BasketPage: React.FC = () => {
         </div>
         <div className="basket-main">
         <div className="basket-food">
-            {basket.food.map((f: any) =>
-            <div className="" key={f.id}>
-                <BasketFoodCard
-                    id={f.id}
-                    name={f.name}
-                    img={f.img}
-                    price={f.price}
-                    weight={f.weight}
-                    count={f.count}
-                    onAdd={fetchBasket}
-                    onRemove={fetchBasket}
-                />
-            </div>
+            {basket.sum === 0 ? <div>Корзина пуста</div>: 
+            basket.food?.map((f: any) => 
+            f.item ? (
+                <div className="" key={f.item.id}>
+                    <BasketFoodCard
+                        id={f.item.id}
+                        name={f.item.name}
+                        img={minio+f.item.img_url}
+                        price={f.item.price}
+                        weight={f.item.weight}
+                        count={f.count}
+                        onAdd={fetchBasket}
+                        onRemove={fetchBasket}
+                    />
+                </div>
+            ) : null
             )}
         </div>
         <div className="basket-info">
@@ -142,15 +147,17 @@ const BasketPage: React.FC = () => {
                     <div
                         className="selected">
                         Самовывоз</div> 
-                    : <div onClick={(e) => handleUpdateInfoBasket({type: 'pickup'})}>
+                    : <div onClick={() => handleUpdateInfoBasket({type: 'pickup'})}>
                         Самовывоз</div>}
                 {type === 'delivery' ? 
                     <div 
-                        onClick={(e) => handleUpdateInfoBasket({type: 'delivery'})}
                         className="selected">Доcтавка</div> 
-                    : <div>Доставка</div>}
+                    : <div onClick={() => {
+                            handleUpdateInfoBasket({type: 'delivery'})
+                        }}>
+                        Доставка</div>}
             </div>
-            {basket.type === 'delivery' &&
+            {type === 'delivery' &&
                 <input
                     type="text"
                     value={basket.address}

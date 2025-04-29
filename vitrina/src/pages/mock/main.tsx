@@ -22,8 +22,9 @@ export const mockInfoData = {
     logo: "/asd",
     phone: "89009009090",
     email: "a@mail.ru",
-    descripArr: ["asduaihdushuheufhe", "oodonalccococon"],
-    imgArr: ["/asmdm.hpn", "/skskm.hyt"],
+    descripArr: ["Mátes Pizza - городской проект от команды Mátes. Классическая неаполитанская пицца, пасты и закуски, мясо, рыба, авторские коктеили и вино, спешалти кофе и свежая выпечка каждый день. За кухню отвечает шеф-повар Иван Фомин, за напитки - шеф-бармен Никита Москвин и шеф-бариста Дмитрий Удовенко", 
+      "В барной карте вы можете найти как классику, так и авторские коктейли от шеф-бармена Никиты Москвина — Sorrel Spritz на Джине и клубнике, Corn Star на текиле с кукурузой и личи и др"],
+    imgArr: ["restaurant/1/1.jpg", "restaurant/1/2.jpg"],
 };
 
 export const mockBasket = {
@@ -34,8 +35,8 @@ export const mockBasket = {
   sum: 1600, 
   restaurant_id: 1,
   food: [
-    {id: 7, name: 'Зелёный салат', price: 600, count: 1, img: "/img/1", weight: 250},
-    {id: 3, name: 'Паста Карбонара', price: 700, count: 1, img: "/default", weight: 350},
-    {id: 6, name: 'Лимонад Цитрус-Мята', price: 300, count: 1, img: "/img2", weight: 300},
+    {item: {id: 7, name: 'Зелёный салат', price: 600, img: "/img/1", weight: 250}, count: 1},
+    {item: {id: 3, name: 'Паста Карбонара', price: 700, img: "/default", weight: 350}, count: 1},
+    {item: {id: 6, name: 'Лимонад Цитрус-Мята', price: 300, img: "/img2", weight: 300}, count: 1},
   ],
 }
