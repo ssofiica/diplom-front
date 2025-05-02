@@ -10,6 +10,7 @@ import del from '../assets/delete-button.svg'
 import axios from 'axios';
 import AcceptModal from '../components/form/accept';
 import SelectBox from '../components/dropdown/dropdown';
+import {url} from '../const/const'
 
 const mockMenuData = [
   { id: 1, name: 'Пицца', restaurant_id: 1, items: [
@@ -26,7 +27,6 @@ const mockMenuData = [
 ];
 
 const rest_id = 1
-const url = "http://82.202.138.105:8080/api"
 const statusArr = [{ value: 'in', label: 'Активные' }, { value: 'stop', label: 'Стоп-лист' }]
 
 const MenuPage: React.FC = () => {

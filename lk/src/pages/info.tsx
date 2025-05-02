@@ -3,10 +3,10 @@ import './css/info.css'
 import {mockDescripArr, mockSchedule} from './mock/info'
 import Button from "../components/button/button";
 import axios from "axios";
+import {url} from '../const/const'
 
 const MAX_LENGTH=400;
 const rest_id = 1
-const url = "http://82.202.138.105:8080/api"
 
 interface Base {
   name: string;

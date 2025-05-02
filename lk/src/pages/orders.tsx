@@ -5,6 +5,7 @@ import MiniOrderCard from '../components/cards/mini-order';
 import Button from '../components/button/button';
 import { mockNewOrders, mockKitchenOrders, mockReadyOrders } from './mock/orders';
 import axios from 'axios';
+import {url, types } from '../const/const'
 
 const mockOrders = [
     { status: 'Новые', items: [
@@ -20,51 +21,72 @@ const mockOrders = [
     ] },
 ];
 
+interface MiniOrder {
+    id: number,
+    sum: number,
+    type: string,
+    created_at: string,
+}
+
+interface OrdersArr {
+    status: string,
+    items: MiniOrder[],
+}
+
 const buttonTextMap: Record<string, string> = {
     'created': 'Принять заказ',
     'accepted': 'Заказ готов',
     'ready': 'Заказ завершен',
 };
 
-const url = "http://82.202.138.105:8080/api"
-
 const OrderPage: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>();
-  const [orders, setOrders] = useState<any[]>([])
+  const [orders, setOrders] = useState<OrdersArr[]>([])
+  const [newOrders, setNewOrders] = useState<MiniOrder[]>([])
+  const [acceptedOrders, setAcceptedOrders] = useState<MiniOrder[]>([])
+  const [readyOrders, setReadyOrders] = useState<MiniOrder[]>([])
 
-  const fetchOrders = async () => {
-    setOrders(mockOrders)
-    // try {
-    //   const resp = await axios.get(`${url}/menu`)
-    //   console.log(resp)
-    //   console.log(resp.data)
-    //   setMenu(resp.data)
-    //   setSelectedCategory(resp.data[0])
-    //   setActiveCategoryIndex(0)
-    // } catch (error) {
-    //   console.log("Ошибка в получении меню", error)
-    // }
+  const fetchOrders = async (status: string) => {
+    try {
+        const resp = await axios.get(`${url}/order/mini-list`, {
+            params: {
+              status: status,
+            },
+        });
+        if (resp.status === 200) {
+            if (status === 'created') {
+                setNewOrders(resp.data)
+            } else if (status === 'accepted') {
+                setAcceptedOrders(resp.data)
+            } else if (status === 'ready') {
+                setReadyOrders(resp.data)
+            }
+        }
+    } catch (error) {
+        console.log("Ошибка в получении orders", error)
+    }
   };
   
   useEffect(() => {
-      fetchOrders();
+    fetchOrders('created');
+    fetchOrders('accepted');
+    fetchOrders('ready');
   }, []);
 
-  const handleItemClick = (id: number, status: string) => {
+  const handleItemClick = async (id: number, status: string) => {
     console.log(id)
-    //запрос
-    if (status === 'Новые'){
-        const i = mockNewOrders.find((item: any) => item.id === id)
-        console.log(i)
-        setSelectedOrder(i)
-    } else if (status === 'На кухне'){
-        const i = mockKitchenOrders.find((item: any) => item.id === id)
-        console.log(i)
-        setSelectedOrder(i)
-    } else if (status === 'Готовы'){
-        const i = mockReadyOrders.find((item: any) => item.id === id)
-        console.log(i)
-        setSelectedOrder(i)
+    const resp = await getByID(id)
+    if (resp?.status === 200){
+        setSelectedOrder(resp.data)
+    }
+  }
+
+  const getByID = async (id: number) => {
+    try {
+        const resp = await axios.get(`${url}/order/${id}`);
+        return resp
+    } catch (error) {
+        console.log("Ошибка в добавлении категории", error)
     }
   }
 
@@ -73,61 +95,104 @@ const OrderPage: React.FC = () => {
     let status = '';
     let date = new Date();
     date.toISOString();
-    const body: Record<string, any> = {};
     if (selectedOrder.status === 'created') {
-        body.status = 'accepted'
-        body.accepted_at = date
+        status = 'accepted'
     } else if (selectedOrder.status === 'accepted') {
-        body.status = 'ready'
-        body.ready_at = date
+        status = 'ready'
     } else if (selectedOrder.status === 'ready') {
-        body.status = 'finished'
-        body.ready_at = date
+        status = 'finished'
     }
     try {
-        const resp = await axios.put(`${url}/order/${id}`, body);
-        return resp
+        const resp = await axios.put(`${url}/order/${id}`, null, {
+            params: {
+                status: status,
+            },
+        });
+        if (resp.status === 200) {
+            if (selectedOrder.status === 'created') {
+                fetchOrders('created');
+                fetchOrders('accepted');
+            } else if (selectedOrder.status === 'accepted') {
+                fetchOrders('ready');
+                fetchOrders('accepted');
+            } else if (selectedOrder.status === 'accepted') {
+                fetchOrders('ready');
+            }
+            setSelectedOrder('')
+        }
+    } catch (error) {
+        console.log("Ошибка в смене статуса заказа", error)
+    }
+  }
+
+  const handleCancelOrder = async (id: number, status: string) => {
+    try {
+        const resp = await axios.put(`${url}/order/${id}`, null, {
+            params: {
+                status: 'canceled',
+            },
+        });
+        if (resp.status === 200) {
+            fetchOrders(status)
+        }
     } catch (error) {
         console.log("Ошибка в добавлении категории", error)
     }
-    // убрать заказ из новых добавить в на кухне
     setSelectedOrder('')
   }
 
-  const handleCancelOrder = async (id: number) => {
-    console.log(id)
-    let date = new Date();
-    date.toISOString();
-    const body = { status: 'canceled', canceled_at: date};
-    try {
-        const resp = await axios.put(`${url}/order/${id}`, body);
-        return resp
-    } catch (error) {
-        console.log("Ошибка в добавлении категории", error)
-    }
-    //запрос
-    // убрать заказ из новых добавить в на кухне
-    setSelectedOrder('')
+  const takeTime = (date: string) => {
+    const createdAt = new Date(date);
+    const time = createdAt.toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    return time
   }
   
   return (
     <div className="orders">
         <div className="desk">
-        {orders.map((item) => (
             <div className="column">
-                <p style={{textAlign: 'left', fontWeight: 500}}>{item.status}</p>
-                {item.items.map((or: any) => (
+                <p style={{textAlign: 'left', fontWeight: 500}}>Новые</p>
+                {newOrders.map((or: any) => (
                     <MiniOrderCard 
-                        type={item.status}
-                        onClick={() => handleItemClick(or.id, item.status)}
+                        type='Новые'
+                        onClick={() => handleItemClick(or.id, 'Новые')}
                         number={or.id} 
-                        time={or.time}
+                        time={takeTime(or.created_at)}
                         sum={or.sum} 
                         variant={or.type}
                     />
                 ))}
             </div>
-        ))}
+            <div className="column">
+                <p style={{textAlign: 'left', fontWeight: 500}}>На кухне</p>
+                {acceptedOrders.map((or: any) => (
+                    <MiniOrderCard 
+                        type='На кухне'
+                        onClick={() => handleItemClick(or.id, 'На кухне')}
+                        number={or.id} 
+                        time={takeTime(or.created_at)}
+                        sum={or.sum} 
+                        variant={or.type}
+                    />
+                ))}
+            </div>
+            <div className="column">
+                <p style={{textAlign: 'left', fontWeight: 500}}>Готовы</p>
+                {readyOrders.map((or: any) => (
+                    <MiniOrderCard 
+                        type='Готовы'
+                        onClick={() => handleItemClick(or.id, 'Готовы')}
+                        number={or.id} 
+                        time={takeTime(or.created_at)}
+                        sum={or.sum} 
+                        variant={or.type}
+                    />
+                ))}
+            </div>
         </div>
         {selectedOrder ? (
         <div className="order">
@@ -136,18 +201,18 @@ const OrderPage: React.FC = () => {
                     <p style={{fontSize: '18px', fontWeight: '500', marginRight: '1em'}}>
                         Заказ №{selectedOrder.id}
                     </p>
-                    <p>Создан в {selectedOrder.created_at}</p>
+                    <p>Создан в {takeTime(selectedOrder.created_at)}</p>
                 </div>
                 {selectedOrder.status === 'accepted' && 
-                    <p style={{fontSize: '14px'}}>Принят в {selectedOrder.accepted_at}</p>
+                    <p style={{fontSize: '14px'}}>Принят в {takeTime(selectedOrder.accepted_at)}</p>
                 }
                 {selectedOrder.status === 'ready' &&  <>
-                    <p style={{fontSize: '14px'}}>Принят в {selectedOrder.accepted_at}</p>
-                    <p style={{fontSize: '14px'}}>Приготовлен в {selectedOrder.ready_at}</p>
+                    <p style={{fontSize: '14px'}}>Принят в {takeTime(selectedOrder.accepted_at)}</p>
+                    <p style={{fontSize: '14px'}}>Приготовлен в {takeTime(selectedOrder.ready_at)}</p>
                 </>}
                 <div className="s-row" style={{fontSize: '14px', marginTop: '10px'}}>
                     <p style={{fontWeight: '500', marginRight: '1em'}}>
-                        {selectedOrder.type}
+                        {types[selectedOrder.type]}
                         {selectedOrder.address && <>:</>}
                     </p>
                     {selectedOrder.address && 
@@ -168,8 +233,8 @@ const OrderPage: React.FC = () => {
             <div style={{marginTop: '15px'}}>
                 {selectedOrder.food.map((f:any) => (
                     <div className="o-row" style={{borderBottom: '1px solid #a6a6a6', padding: '5px 0px'}}>
-                        <p>{f.name}</p>
-                        <p>{f.count} x {f.price}  ₽</p>
+                        <p>{f.item.name}</p>
+                        <p>{f.count} x {f.item.price}  ₽</p>
                     </div>
                 ))}
             </div>
@@ -183,7 +248,7 @@ const OrderPage: React.FC = () => {
                 style={{padding: '10px 30px'}}
             >{buttonTextMap[selectedOrder.status]}</Button>
             <Button 
-                onClick={() => handleCancelOrder(selectedOrder.id)} 
+                onClick={() => handleCancelOrder(selectedOrder.id, selectedOrder.status)} 
                 style={{backgroundColor: 'transparent'}}
             >Отменить</Button>
         </div>

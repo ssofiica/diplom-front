@@ -3,7 +3,7 @@ import './css/mini-order.css'
 
 interface MiniOrderCardProps {
   onClick?: () => void;
-  type?: 'Новые' | 'На кухне' | 'Готовы';
+  type?: string;
   style?: React.CSSProperties;
   number: string,
   time: string,
