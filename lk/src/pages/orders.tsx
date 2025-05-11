@@ -1,4 +1,3 @@
-//import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import './css/orders.css'
 import MiniOrderCard from '../components/cards/mini-order';

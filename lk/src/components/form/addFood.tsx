@@ -3,12 +3,14 @@ import './addFood.css';
 import './.css';
 import InputWithUnit from '../input/input';
 import Button from '../button/button';
-import SelectBox from '../dropdown/dropdown';
+import edit from '../../assets/edit-button.svg'
+import {minio} from '../../const/const'
+
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (dish: { name: string; weight: number; price: number; category: number; status: string }) => void;
+  onSubmit: (dish: { name: string; weight: number; price: number; category: number; status: string; img: File|null }) => void;
   title: string;
   food?: any;
   id: any;
@@ -29,40 +31,23 @@ const AddFoodModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, title, 
   const [price, setPrice] = useState<number | ''>('');
   const [category, setCategory] = useState<any>(id);
   const [isChecked, setIsChecked] = useState(false); //false - in, true - stop
-  const [categories, setCategories] = useState<any>(mockCategories);
-
-  // Загрузка категорий из API
-  // useEffect(() => {
-  //   const fetchCategories = async () => {
-  //     try {
-  //       // Пример запроса к API
-  //       const response = await fetch('https://localhost:8080/api/categories');
-  //       const data = await response.json();
-  //       setCategories(data); // Предполагаем, что API возвращает массив строк
-  //       if (data.length > 0) {
-  //         setCategory(data[0]); // Устанавливаем первую категорию по умолчанию
-  //       }
-  //     } catch (error) {
-  //       console.error('Ошибка при загрузке категорий:', error);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
-
-  //   fetchCategories();
-  // }, []);
+  const [file, setFile] = useState<File | null>(null);
+  const [image, setImage] = useState<string>('');
+  const [isHovered, setIsHovered] = useState<boolean>(false);
 
   useEffect(() => {
     if (food) {
-        setName(food.name);
-        setPrice(food.price);
-        setWeight(food.weight);
-        setIsChecked(statusMap[food.status]);
+      setName(food.name);
+      setPrice(food.price);
+      setWeight(food.weight);
+      setImage(minio+food.img_url)
+      setIsChecked(statusMap[food.status]);
     } else {
-        setName('');
-        setPrice('');
-        setWeight('');
-        setIsChecked(false)
+      setName('');
+      setPrice('');
+      setWeight('');
+      setImage('')
+      setIsChecked(false)
     }
 }, [food]);
 
@@ -70,7 +55,7 @@ const AddFoodModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, title, 
     if (name && weight && price && category) {
       let st = isChecked ? 'stop' : 'in'
       const s = parseInt(category)
-      onSubmit({ name, weight, price, category:s, status:st});
+      onSubmit({ name, weight, price, category:s, status:st, img:file});
       onClose();
       setName('');
       setPrice('');
@@ -82,9 +67,28 @@ const AddFoodModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, title, 
   if (!isOpen) return null;
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Закрываем модальное окно только если кликнули на область затемнения
     if (e.target === e.currentTarget) {
       onClose();
+    }
+  };
+
+  const handleImageClick = () => {
+    const fileInput = document.getElementById('file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const target = event.target;
+    if (target.files && target.files.length > 0) {
+      const selectedFile = target.files[0];
+      setFile(selectedFile);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result as string);
+      };
+      reader.readAsDataURL(selectedFile);
     }
   };
 
@@ -96,7 +100,28 @@ const AddFoodModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, title, 
           <div onClick={onClose}>Закрыть</div>
         </div>
         <div className="main">
-          <img src="https://eda.yandex/images/3420935/bf93ac4febba46d8ab4e01218a73655b-216x188.jpeg" alt='Фото блюда'></img>
+          <div
+            onClick={handleImageClick}
+            style={{ position: 'relative', cursor: 'pointer', height: '200px'}}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            <img src={image} alt='Фото блюда' style={{height: '100%'}}/>
+            {isHovered && (
+            <img
+              src={edit}
+              alt="Hover"
+              style={{position: 'absolute', top: '10px', left: '10px', width: '20%', height: '20%', objectFit: 'cover', color: 'white'}}
+          />
+        )}
+          </div>
+          <input
+            type="file"
+            id="file-input"
+            style={{ display: 'none' }}
+            accept="image/*"
+            onChange={handleFileChange}
+          />
           <div className="right" style={{marginLeft:'20px'}}>
             <form>
               <InputWithUnit
@@ -122,11 +147,6 @@ const AddFoodModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, title, 
                 />
               </div>
               <div className="m-row">
-                <SelectBox
-                  options={categories}
-                  onChange={setCategory}
-                  value={id}
-                />
                 <div className="checkbox">
                   <input 
                     type="checkbox"

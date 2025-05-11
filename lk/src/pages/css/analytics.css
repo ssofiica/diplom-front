@@ -1,0 +1,9 @@
+.analytics{
+    width: 90%;
+    margin: auto;
+}
+.data-picker{
+    border: 1px solid #d3d3d3;
+    border-radius: 10px;
+    padding: 5px 10px;
+}

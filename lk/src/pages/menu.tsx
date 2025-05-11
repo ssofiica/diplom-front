@@ -10,7 +10,7 @@ import del from '../assets/delete-button.svg'
 import axios from 'axios';
 import AcceptModal from '../components/form/accept';
 import SelectBox from '../components/dropdown/dropdown';
-import {url} from '../const/const'
+import {minio, url} from '../const/const'
 
 const mockMenuData = [
   { id: 1, name: 'Пицца', restaurant_id: 1, items: [
@@ -40,39 +40,41 @@ const MenuPage: React.FC = () => {
   const [activeCategoryIndex, setActiveCategoryIndex] = useState<number>(mockMenuData[0].id);
   const [status, setStatus] = useState<string>('in');
 
-  const AddFood = async (dish: { name: string; weight: number; price: number; category: number; status: string }) => {
+  const AddFood = async (dish: { name: string; weight: number; price: number; category: number; status: string, img: File | null }) => {
     try {
       const resp = await axios.post(`${url}/menu/food/add`, {
 	      name: dish.name,
-	      price: dish.price,
-        weight: dish.weight,
-	      img_url: "",
-	      status: dish.status,
-	      category_id: dish.category,
 	      restaurant_id: rest_id,
+	      category_id: activeCategoryIndex,
+        weight: dish.weight,
+	      price: dish.price,
+	      status: dish.status,
       });
+      if (resp.status === 200) {
+        const formData = new FormData();
+        if (dish.img) {
+          formData.append('img', dish.img);
+        }
+        const response= await axios.put(`${url}/menu/food/${resp.data.id}/img`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        if (response.status === 200) {
+          resp.data.img_url = response.data
+        }
+      }
       return resp
     } catch (error) {
       console.log("Ошибка в добавлении блюда", error)
     }
   };
 
-  const handleAddDish = async (dish: { name: string; weight: number; price: number; category: number; status: string }) => {
+  const handleAddDish = async (dish: { name: string; weight: number; price: number; category: number; status: string, img: File | null}) => {
     try {
+      console.log("ok")
       const response = await AddFood(dish);
-      let newFood = {
-        id: 1000,
-        name: dish.name,
-        price: dish.price,
-        weight: dish.weight,
-        img_url: "",
-        status: dish.status,
-        category_id: dish.category,
-      }
-      setSelectedCategory((ctgInfo: any) => ({
-        ...ctgInfo,
-        items: [...ctgInfo.items, newFood]
-      }));
+      console.log(response)
       if (response?.status === 200) {
         let newFood = {
           id: response.data.id,
@@ -114,8 +116,18 @@ const MenuPage: React.FC = () => {
   const handleEditFood = async (dish: { name: string; weight: number; price: number; category: number; status: string }) => {
     console.log('Редактирование блюда:', dish);
     const response = await editFood(selectedFood.id, dish);
-    //TODO: дописать изменение записи в таблице
-    // Здесь можно добавить логику для сохранения блюда
+    if (response?.status === 200){
+      if (response.data.category_id === activeCategoryIndex) {
+        const updatedItems = selectedCategory.items.map((item:any) => {
+          if (item.id === response.data.id) {
+            return { ...response.data };
+          }
+          return item; // Возвращаем неизменённый элемент
+        });
+    
+        setSelectedCategory({ ...selectedCategory, items: updatedItems });
+      }
+    }
   };
 
   const addCategory = async (name: string, id: number) => {
@@ -237,23 +249,13 @@ const MenuPage: React.FC = () => {
   }
 
   const handleDeleteFood = async (id: number) => {
+    console.log(id)
     const response = await deleteFood(id);
     if (response?.status === 200) {
       setSelectedCategory((ctg: any) => ({
         ...ctg,
         items: ctg.items.filter((ctg: any) => ctg.id !== id),
       }));
-      setMenu(prevMenu => 
-        prevMenu.map(category => {
-          if (category.id === activeCategoryIndex) {
-            return {
-              ...category,
-              items: category.items.filter((food: any) => food.id !== id)
-            };
-          }
-          return category;
-        })
-      );
     } else if (response?.status === 500) {
       console.log('Ошибка сервера при удалении элемента');
     }
@@ -297,7 +299,7 @@ const MenuPage: React.FC = () => {
             onClose={() => setIsFoodModalOpen(false)}
             onSubmit={handleAddDish}
             title='Новое блюдо'
-            id={undefined}
+            id={activeCategoryIndex}
           />
         </div>
         <div className="table">
@@ -312,8 +314,7 @@ const MenuPage: React.FC = () => {
           </div>
           {selectedCategory.items?.map((item:any) => (
             <div key={item.id} className="row">
-              {/* TODO: вставить src */}
-              <img className="img" alt='Фотка'></img>
+              <img className="img" src={minio+item.img_url} alt='Фотка'></img>
               <p className="row-style" style={{paddingLeft: '5px'}}>{item.name}</p>
               <p className="row-style" style={{textAlign: 'center'}}>{item.weight}</p>
               <p className="row-style" style={{textAlign: 'center'}}>{item.price}</p>
@@ -339,7 +340,7 @@ const MenuPage: React.FC = () => {
               </span>
               <span className="row-style">
                 <ImgButton src={del} imgStyle={{height: "1.2em"}} onClick={() =>{ 
-                  setIsAcceptModalOpen(true) 
+                  setIsAcceptModalOpen(true)
                   setSelectedFood(item)
                 }}>
                 </ImgButton>

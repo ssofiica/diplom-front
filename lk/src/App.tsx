@@ -4,6 +4,7 @@ import MenuPage from './pages/menu';
 import Header from './pages/header';
 import OrderPage from './pages/orders';
 import InfoPage from './pages/info';
+import AnalyticsPage from './pages/analytics';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/menu" element={<MenuPage />} />
         <Route path="/order" element={<OrderPage />} />
         <Route path="/info" element={<InfoPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
       </Routes>
     </Router>
   );

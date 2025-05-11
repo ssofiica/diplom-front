@@ -3,7 +3,7 @@ import './css/info.css'
 import {mockDescripArr, mockSchedule} from './mock/info'
 import Button from "../components/button/button";
 import axios from "axios";
-import {url} from '../const/const'
+import {url, minio} from '../const/const'
 
 const MAX_LENGTH=400;
 const rest_id = 1
@@ -32,7 +32,8 @@ const InfoPage: React.FC = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [oldBase, setOldBase] = useState<Base>({name: '', phone: '', email: '', address: '', logo: ''});
   const [files, setFiles] = useState<File[]>([]);
-  const [changedDescriptions, setChangedDescriptions] = useState<boolean[]>([false]); // 
+  const [changedDescriptions, setChangedDescriptions] = useState<boolean[]>([false]);
+  const [changedImgs, setChangedImgs] = useState<number[]>([]);
 
   const textareaRefs = useRef<HTMLTextAreaElement[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -41,10 +42,13 @@ const InfoPage: React.FC = () => {
     try {
       const response = await axios.get(`${url}/info`)
       if (response.status === 200) {
+        console.log(response.data)
         setName(response.data.name)
         setAddress(response.data.address)
         setPhone(response.data.phone)
         setDescripArr(response.data.description)
+        let arr = response.data.img_urls
+        setImgArr(arr.map((url: string) => minio+url))
         setEmail(response.data.email)
         setLogo(response.data.logo_url)
         setOldBase((prev: any) => ({
@@ -65,25 +69,6 @@ const InfoPage: React.FC = () => {
     fetchInfo();
   }, []);
 
-  const handleInput = (event: React.FormEvent<HTMLTextAreaElement>, index: any) => {
-    const target = event.target as HTMLTextAreaElement;
-    let newArr = [...descripArr]
-    if (target.value.length > MAX_LENGTH) {
-      newArr[index] = target.value.slice(0, MAX_LENGTH)
-    } else {
-      newArr[index] = target.value
-    }
-    setDescripArr(newArr)
-    const newChangedDescriptions = [...changedDescriptions];
-    newChangedDescriptions[index] = true;
-    setChangedDescriptions(newChangedDescriptions);
-
-    if (textareaRefs.current[index]) {
-      textareaRefs.current[index].style.height = 'auto';
-      textareaRefs.current[index].style.height = `${textareaRefs.current[index].scrollHeight + 20}px`;
-    }
-  };
-
   const saveBase = async () => {
     try {
       const body: Record<string, any> = {};
@@ -93,8 +78,11 @@ const InfoPage: React.FC = () => {
       if (oldBase?.email != email) body.email = email; 
       console.log(oldBase?.email, email)
       console.log(body)
-      const resp = await axios.post(`${url}/info/base`, body);
-      return resp
+      if (Object.keys(body).length > 0) {
+        const resp = await axios.post(`${url}/info/base`, body);
+        return resp
+      }
+      return
     } catch (error) {
       console.log("Ошибка в удалении блюда", error)
     }
@@ -105,7 +93,7 @@ const InfoPage: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('logo_url', logoFile)
-      const resp = await axios.post(`${url}/info/upload_logo${rest_id}`, formData, {headers: {
+      const resp = await axios.post(`${url}/info/upload-logo`, formData, {headers: {
         'Content-Type': 'multipart/form-data',
       }});
       return resp
@@ -144,15 +132,19 @@ const InfoPage: React.FC = () => {
       if (changedDescriptions) {
         formData.append('descriptions', JSON.stringify(text));
         formData.append('descrip_indexes', JSON.stringify(numsD));
+      } else if (!changedImgs) {
+        return
       }
       
       //TODO: в files должны храниться фотки и отправлять измененные
-      const numsF: number[] = []
       files.forEach((file: any, index: number) => {
+        console.log(index)
         formData.append('images', file); 
-        numsF.push(index+1)
       });
-      formData.append('img_indexes', JSON.stringify(numsF));
+      if (changedImgs) {
+        formData.append('img_indexes', JSON.stringify(changedImgs));
+        console.log(changedImgs)
+      }
 
       const resp = await axios.post(`${url}/info/site-content`, formData, {
         headers: {
@@ -169,6 +161,9 @@ const InfoPage: React.FC = () => {
     const resp = await saveDescripAndImgs();
     if (resp?.status === 200) {
       console.log(resp.data)
+      setFiles([])
+      setChangedImgs([])
+      setChangedDescriptions([])
     }
   }
 
@@ -193,9 +188,27 @@ const InfoPage: React.FC = () => {
     }
   };
 
+  const handleInput = (event: React.FormEvent<HTMLTextAreaElement>, index: any) => {
+    const target = event.target as HTMLTextAreaElement;
+    let newArr = [...descripArr]
+    if (target.value.length > MAX_LENGTH) {
+      newArr[index] = target.value.slice(0, MAX_LENGTH)
+    } else {
+      newArr[index] = target.value
+    }
+    setDescripArr(newArr)
+    const newChangedDescriptions = [...changedDescriptions];
+    newChangedDescriptions[index] = true;
+    setChangedDescriptions(newChangedDescriptions);
+
+    if (textareaRefs.current[index]) {
+      textareaRefs.current[index].style.height = 'auto';
+      textareaRefs.current[index].style.height = `${textareaRefs.current[index].scrollHeight + 20}px`;
+    }
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, index: any) => {
     const file = event.target.files?.[0];
-    // TODO: загрузить в minio 
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -204,6 +217,12 @@ const InfoPage: React.FC = () => {
           setImgArr(newArr)
       };
       reader.readAsDataURL(file); 
+
+      let arr = [...files, file]
+      setFiles(arr)
+      const newChangedImgs = [...changedImgs, index+1];
+      setChangedImgs(newChangedImgs);
+      console.log(arr, newChangedImgs)
     }
   };
 
@@ -267,7 +286,7 @@ const InfoPage: React.FC = () => {
           <input
             type="file"
             onChange={(e) => handleFileChange(e, imgArr.length-1)}
-            accept="image/*" // Укажите типы файлов, которые вы хотите разрешить
+            accept="image/*"
             style={{ display: 'none' }}
             ref={fileInputRef}
           />
@@ -317,7 +336,7 @@ const InfoPage: React.FC = () => {
               {previewUrl && (
                 <div className="preview">
                   <img 
-                    src={previewUrl} 
+                    src={minio+logo} 
                     alt="Preview" 
                     style={{ maxWidth: '300px', maxHeight: '300px' }}
                   />
