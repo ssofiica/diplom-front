@@ -35,7 +35,7 @@ interface Food {
 }
 
 const MainPage: React.FC = () => {
-    const [info, setInfo] = useState<Info>(mockInfoData);
+    const [info, setInfo] = useState<any>('');
     //const [menu, setMenu] = useState<any[]>(mockMenuData);
     const [menu, setMenu] = useState<any[]>([]);
     const [current, setCurrent] = useState<any[]>([]);
@@ -74,7 +74,6 @@ const MainPage: React.FC = () => {
 
     const fetchBasket = async () => {
         try {
-            //TODO: проверить url
             const response = await axios.get(`${url}/order/basket`)
             if (response.status === 200) {
                 if (response.data === "У вас нет корзины") {
@@ -114,7 +113,7 @@ const MainPage: React.FC = () => {
     };
     
     useEffect(() => {
-        //fetchInfo();
+        fetchInfo();
         fetchMenu();
         fetchBasket();
         fetchCurrent();
@@ -199,7 +198,7 @@ const MainPage: React.FC = () => {
 
     return (<>
         <div className="main-header">
-            <p style={{fontSize: "28px", margin: '12px 0'}}>{info?.name} </p>
+            <img src={minio+info?.logo} style={{height: '28px'}}/>
             <div style={{display: 'flex', alignItems: 'center'}}>
             {basket && <Link to="/basket">
                 <Button 

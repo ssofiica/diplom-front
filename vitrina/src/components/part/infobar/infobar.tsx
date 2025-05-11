@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {minio} from '../../../const/const'
 import './info.css'
 
@@ -10,12 +10,20 @@ interface InfoBarProps {
 const TextImageDisplay: React.FC<InfoBarProps> = ({descrip, img}) => {
     const [texts, setTexts] = useState<string[]>(descrip);
     const [images, setImages] = useState<string[]>(img);
-
     
-    const maxLength = Math.max(texts.length, images.length);
+    useEffect(() => {
+        setTexts(descrip || []);
+    }, [descrip]);
+    
+    useEffect(() => {
+        setImages(img || []);
+    }, [img]);
+    
+    console.log(texts, img?.length)
+    const maxLength = Math.max(texts?.length, images?.length);
     const displayItems = [];
     
-    if (images.length === 2) {
+    if (images?.length === 2) {
         displayItems.push(<p key={`text-${0}`} className="type-1">{texts[0]}</p>)
         displayItems.push(
             <div className="two-img-row">
@@ -33,9 +41,10 @@ const TextImageDisplay: React.FC<InfoBarProps> = ({descrip, img}) => {
                 displayItems.push(<p key={`text-${i}`}>{texts[i]}</p>);
             }
             if (i < images.length) {
-                displayItems.push(<img key={`image-${i}`} src={minio+images[i]} alt={`Image ${i + 1}`} style={{ width: '100%', height: 'auto' }} />);
+                displayItems.push(<img key={`image-${i}`} src={minio+images[i]} alt={`Image ${i + 1}`} style={{ height: '500px' }} />);
             }
         }
+        console.log(displayItems)
     }
 
     return (
