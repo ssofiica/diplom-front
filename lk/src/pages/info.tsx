@@ -31,8 +31,9 @@ const InfoPage: React.FC = () => {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [oldBase, setOldBase] = useState<Base>({name: '', phone: '', email: '', address: '', logo: ''});
-  const [files, setFiles] = useState<File[]>([]);
-  const [changedDescriptions, setChangedDescriptions] = useState<boolean[]>([false]);
+  const [files, setFiles] = useState<any[]>([]);
+  const [copyDescripArr, setCopyDescripArr] = useState<any>([])
+  const [changedDescriptionsIndx, setChangedDescriptionsIndx] = useState<boolean[]>([false]);
   const [changedImgs, setChangedImgs] = useState<number[]>([]);
 
   const textareaRefs = useRef<HTMLTextAreaElement[]>([]);
@@ -47,6 +48,7 @@ const InfoPage: React.FC = () => {
         setAddress(response.data.address)
         setPhone(response.data.phone)
         setDescripArr(response.data.description)
+        setCopyDescripArr(response.data.description)
         let arr = response.data.img_urls
         setImgArr(arr.map((url: string) => minio+url))
         setEmail(response.data.email)
@@ -123,20 +125,21 @@ const InfoPage: React.FC = () => {
       const formData = new FormData();
       const numsD: number[] = []
       const text: string[] = []
-      descripArr.forEach((description: string, index: number) => {
-        if (changedDescriptions[index]) {
+      console.log(changedDescriptionsIndx, copyDescripArr)
+      copyDescripArr.forEach((description: string, index: number) => {
+        if (changedDescriptionsIndx[index]) {
           numsD.push(index+1)
+          console.log(text)
           text.push(description)
         }
       });
-      if (changedDescriptions) {
+      if (changedDescriptionsIndx) {
         formData.append('descriptions', JSON.stringify(text));
         formData.append('descrip_indexes', JSON.stringify(numsD));
       } else if (!changedImgs) {
         return
       }
       
-      //TODO: в files должны храниться фотки и отправлять измененные
       files.forEach((file: any, index: number) => {
         console.log(index)
         formData.append('images', file); 
@@ -163,7 +166,7 @@ const InfoPage: React.FC = () => {
       console.log(resp.data)
       setFiles([])
       setChangedImgs([])
-      setChangedDescriptions([])
+      setChangedDescriptionsIndx([])
     }
   }
 
@@ -176,9 +179,26 @@ const InfoPage: React.FC = () => {
 
   const deleteDescrip = (index: any) => {
     let newArr = [...descripArr]
+    let copyArr = [...descripArr]
+    copyArr[index] = ""
+    setCopyDescripArr(copyArr)
     newArr.splice(index, 1)
     setDescripArr(newArr)
-    // TODO: запрос на удаление описания
+    const newChangedDescriptionsIndx = [...changedDescriptionsIndx];
+    newChangedDescriptionsIndx[index] = true;
+    setChangedDescriptionsIndx(newChangedDescriptionsIndx);
+  }
+
+  const deleteImg = (index: any) => {
+    let newArr = [...imgArr]
+    newArr.splice(index, 1)
+    setImgArr(newArr)
+
+    let arr = [...files, ""]
+    setFiles(arr)
+    const newChangedImgs = [...changedImgs, index+1];
+    setChangedImgs(newChangedImgs);
+    console.log(arr, newChangedImgs)
   }
 
   const addImageButton = () => {
@@ -197,9 +217,10 @@ const InfoPage: React.FC = () => {
       newArr[index] = target.value
     }
     setDescripArr(newArr)
-    const newChangedDescriptions = [...changedDescriptions];
-    newChangedDescriptions[index] = true;
-    setChangedDescriptions(newChangedDescriptions);
+    setCopyDescripArr(newArr)
+    const newChangedDescriptionsIndx = [...changedDescriptionsIndx];
+    newChangedDescriptionsIndx[index] = true;
+    setChangedDescriptionsIndx(newChangedDescriptionsIndx);
 
     if (textareaRefs.current[index]) {
       textareaRefs.current[index].style.height = 'auto';
@@ -279,20 +300,27 @@ const InfoPage: React.FC = () => {
       <div>
         {activeTab === 'description' && 
         <div className="tab-content">
-          <div>Фото</div>
-          {imgArr.map((item:any, index:any) => (
-            <img src={item} style={{width: '40px', height: '40px'}}/>
-          ))}
+          <div style={{marginBottom: 10}}>Фото</div>
+          <div className="images" style={{display: 'flex', gap: 20}}>
+            {imgArr.map((item:any, index:any) => (
+              <div style={{display: 'flex', width: '150px', flexDirection: 'column'}}>
+                <img src={item} style={{width: '150px', height: '150px', marginBottom: 10}}/>
+                <Button 
+                  onClick={() => deleteImg(index)}
+                >-</Button>
+              </div>
+            ))}
           <input
             type="file"
             onChange={(e) => handleFileChange(e, imgArr.length-1)}
             accept="image/*"
             style={{ display: 'none' }}
             ref={fileInputRef}
-          />
+            />
           <Button onClick={addImageButton} 
               style={{backgroundColor: 'transparent'}}
           >+</Button>
+          </div>
           <div className="descriptions">
             <div>Описания</div>
             {descripArr.map((item:any, index:any) => (
@@ -316,7 +344,8 @@ const InfoPage: React.FC = () => {
               <Button 
                 onClick={() => {
                   setDescripArr([...descripArr, '']);
-                  setChangedDescriptions([...changedDescriptions, false]);
+                  setCopyDescripArr([...descripArr, '']);
+                  setChangedDescriptionsIndx([...changedDescriptionsIndx, false]);
                 }}
                 style={{backgroundColor: 'transparent'}}
               >+</Button>
