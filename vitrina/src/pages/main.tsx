@@ -1,4 +1,5 @@
 import axios from 'axios';
+import {useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import {mockMenuData, mockInfoData, mockBasket} from './mock/main';
 import Button from '../components/button/button';
@@ -8,6 +9,7 @@ import "./css/main.css"
 import basketBlack from '../assets/basket-black.svg'
 import MiniOrderCard from '../components/cards/mini-order/mini-order';
 import {url, minio, statuses, types} from '../const/const'
+import { checkAuth, getTokenFromStorage, isTokenValid } from './jwt/token';
 import TextImageDisplay from '../components/part/infobar/infobar';
 
 const rest_id = 1
@@ -35,6 +37,8 @@ interface Food {
 }
 
 const MainPage: React.FC = () => {
+    const [isAuth, setIsAuth] = useState<boolean>(false);
+    const [user, setUser] = useState<any>()
     const [info, setInfo] = useState<any>('');
     //const [menu, setMenu] = useState<any[]>(mockMenuData);
     const [menu, setMenu] = useState<any[]>([]);
@@ -43,6 +47,7 @@ const MainPage: React.FC = () => {
     const [selectedCategory, setSelectedCategory] = useState<any>('');
     const [activeCategoryIndex, setActiveCategoryIndex] = useState<number>();
     const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+    const navigate = useNavigate();
 
     const toggleMenu = () => {
         setIsMenuOpen(prev => !prev);
@@ -74,7 +79,12 @@ const MainPage: React.FC = () => {
 
     const fetchBasket = async () => {
         try {
-            const response = await axios.get(`${url}/order/basket`)
+            const tkn = getTokenFromStorage()
+            const response = await axios.get(`${url}/order/basket`, {
+                headers: {
+                    Authorization: `Bearer ${tkn}`,
+                },
+            })
             if (response.status === 200) {
                 if (response.data === "У вас нет корзины") {
                     setBasket('')
@@ -102,7 +112,12 @@ const MainPage: React.FC = () => {
 
     const fetchCurrent = async () => {
         try {
-            const response = await axios.get(`${url}/order/current`)
+            const tkn = getTokenFromStorage()
+            const response = await axios.get(`${url}/order/current`, {
+                headers: {
+                    Authorization: `Bearer ${tkn}`,
+                },
+            })
             if (response.status === 200) {
                 console.log(response.data)
                 setCurrent(response.data)
@@ -113,6 +128,12 @@ const MainPage: React.FC = () => {
     };
     
     useEffect(() => {
+        const {isAuthenticated, data, token} = checkAuth();
+        console.log(isAuthenticated, data, token)
+        if (isAuthenticated && token) {
+            setIsAuth(true)
+            setUser(data)
+        }
         fetchInfo();
         fetchMenu();
         fetchBasket();
@@ -147,7 +168,12 @@ const MainPage: React.FC = () => {
                 count: count,
             }
             console.log(body)
-            const response = await axios.post(`${url}/order/food`, body)
+            const tkn = getTokenFromStorage()
+            const response = await axios.post(`${url}/order/food`, body, {
+                headers: {
+                    Authorization: `Bearer ${tkn}`,
+                },
+            });
             console.log(response)
             return response
         } catch (error) {
@@ -156,6 +182,17 @@ const MainPage: React.FC = () => {
     }
     
     const handleAddToBasket = async (id: number, food:any) => {
+        const tkn = getTokenFromStorage()
+        console.log(tkn)
+        if (tkn === null) {
+            navigate("/login")
+            return
+        }
+        if (!isTokenValid(tkn)) {
+            navigate("/login")
+            return
+        }
+
         console.log(`Добавить блюдо ${id} в корзину`);
         const response = await ChangeFoodCountInBasket(food.id, food.count+1)
         if (response?.status === 200) {
@@ -196,6 +233,15 @@ const MainPage: React.FC = () => {
         
     };
 
+    const handleLogout = () => {
+        localStorage.clear();
+        setIsAuth(false);
+        setUser('');
+        setIsMenuOpen(false);
+        setCurrent([]);
+        setBasket('');
+    };
+
     return (<>
         <div className="main-header">
             <img src={minio+info?.logo} style={{height: '28px'}}/>
@@ -215,13 +261,18 @@ const MainPage: React.FC = () => {
                     </p>
                 </Button>
                 </Link>}
-                <div style={{ position: 'relative', marginLeft: '10px' }}>
-                    <p onClick={toggleMenu}>{name}</p>
-                </div>
+                { isAuth ? 
+                    <div style={{ position: 'relative', marginLeft: '10px' }}>
+                        <p onClick={toggleMenu}>{user?.Name}</p>
+                    </div> : 
+                    <div>
+                        <Link to="/login" style={{color: '#141414'}}>Войти</Link>
+                    </div>
+                }
                 {isMenuOpen && (
                 <div className="menu">
                     <Link to="/profile" style={{color: '#141414'}}>Мои заказы</Link>
-                    <div onClick={handleMenuItemClick} style={{marginTop: '10px', cursor: 'pointer' }}>
+                    <div onClick={handleLogout} style={{marginTop: '10px', cursor: 'pointer' }}>
                         Выйти
                     </div>
                 </div>

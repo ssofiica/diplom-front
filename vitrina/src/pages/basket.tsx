@@ -8,6 +8,7 @@ import './css/basket.css'
 import back from '../assets/arrow-left.svg'
 import BasketFoodCard from '../components/cards/food-basket/food-basket.tsx';
 import {url, minio} from '../const/const'
+import { getTokenFromStorage, isTokenValid } from './jwt/token.tsx';
 
 const rest_id = 1
 
@@ -28,6 +29,8 @@ interface Info {
 
 const BasketPage: React.FC = () => {
     //const [basket, setBasket] = useState<any>(mockBasket);
+    const [isAuth, setIsAuth] = useState<boolean>(false);
+    const [user, setUser] = useState<any>()
     const [basket, setBasket] = useState<any>('');
     const [comment, setComment] = useState<string>('');
     const [type, setType] = useState<string>(mockBasket.type);
@@ -36,7 +39,12 @@ const BasketPage: React.FC = () => {
 
     const fetchBasket = async () => {
         try {
-            const response = await axios.get(`${url}/order/basket`)
+            const tkn = getTokenFromStorage()
+            const response = await axios.get(`${url}/order/basket`, {
+                headers: {
+                    Authorization: `Bearer ${tkn}`,
+                },
+            });
             if (response.status === 200) {
                 setBasket(response.data)
                 console.log(response.data)
@@ -54,7 +62,12 @@ const BasketPage: React.FC = () => {
 
     const handleUpdateInfoBasket = async (body: {}) => {
         try {
-            const response = await axios.post(`${url}/order/info`, body)
+            const tkn = getTokenFromStorage()
+            const response = await axios.post(`${url}/order/info`, body, {
+                headers: {
+                    Authorization: `Bearer ${tkn}`,
+                },
+            })
             if (response.status === 200) {
                 console.log(response.data)
                 //setBasket(response.data)
@@ -76,7 +89,13 @@ const BasketPage: React.FC = () => {
     const handlePay = async () => {
         console.log()
         try {
-            const response = await axios.post(`${url}/order/pay`)
+            const tkn = getTokenFromStorage()
+            console.log(tkn)
+            const response = await axios.post(`${url}/order/pay`, null, {
+                headers: {
+                    Authorization: `Bearer ${tkn}`,
+                },
+            })
             if (response.status === 200) {
                 setBasket('')
                 navigate("/");
@@ -100,6 +119,57 @@ const BasketPage: React.FC = () => {
         }
     };
 
+    const ChangeFoodCountInBasket = async (id: number, count:any) => {
+        try {
+            const body = {
+                food_id: id,
+                count: count,
+            }
+            console.log(body)
+            const tkn = getTokenFromStorage()
+            const response = await axios.post(`${url}/order/food`, body, {
+                headers: {
+                    Authorization: `Bearer ${tkn}`,
+                },
+            });
+            console.log(response)
+            return response
+        } catch (error) {
+            console.log("Ошибка в получении корзины", error)
+        }
+    }
+
+    const handleAddToBasket = async (id: number, food:any) => {
+        const tkn = getTokenFromStorage()
+        console.log(tkn)
+        if (tkn === null) {
+            navigate("/login")
+            return
+        }
+        if (!isTokenValid(tkn)) {
+            navigate("/login")
+            return
+        }
+
+        console.log(`Добавить блюдо ${id} в корзину`);
+        const response = await ChangeFoodCountInBasket(food.id, food.count+1)
+        if (response?.status === 200) {
+            setBasket(response.data)
+        }
+    };
+    
+    const handleRemoveFromBasket = async (id: number, food:any) => {
+        console.log(`Удалить блюдо ${id} из корзины`);
+        const exist = basket.food.find((f:any) => f.item.id === id);
+        if (!exist) return;
+
+        const response = await ChangeFoodCountInBasket(food.id, food.count-1)
+        if (response?.status === 200) {
+            console.log()
+            setBasket(response.data)
+        }
+    };    
+
     return (
     <div className="basket">
         <div className="basket-header">
@@ -121,8 +191,8 @@ const BasketPage: React.FC = () => {
                         price={f.item.price}
                         weight={f.item.weight}
                         count={f.count}
-                        onAdd={fetchBasket}
-                        onRemove={fetchBasket}
+                        onAdd={handleAddToBasket}
+                        onRemove={handleRemoveFromBasket}
                     />
                 </div>
             ) : null

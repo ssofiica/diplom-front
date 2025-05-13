@@ -7,6 +7,7 @@ import './css/profile.css'
 import back from '../assets/arrow-left.svg'
 import MiniOrderCard from '../components/cards/mini-order/mini-order.tsx';
 import {url, minio, statuses, types} from '../const/const'
+import { getTokenFromStorage } from './jwt/token.tsx';
 
 const rest_id = 1
 
@@ -41,7 +42,12 @@ const ProfilePage: React.FC = () => {
 
     const fetchArchive = async () => {
         try {
-            const response = await axios.get(`${url}/order/archive`)
+            const tkn = getTokenFromStorage()
+            const response = await axios.get(`${url}/order/archive`, {
+                headers: {
+                    Authorization: `Bearer ${tkn}`,
+                },
+            })
             if (response.status === 200) {
                 setOrders(response.data)
                 let id = response.data[0].id
@@ -105,6 +111,7 @@ const ProfilePage: React.FC = () => {
             )}
         </div>
         <div className="archive-order">
+            {selectedOrder ? <>
             <div>
                 <div style={{display:'flex', alignItems: 'center'}}>
                     <p style={{fontSize: '20px', fontWeight: '600', marginRight: '1em'}}>
@@ -136,7 +143,8 @@ const ProfilePage: React.FC = () => {
                         <p style={{marginLeft: '10px'}}>{f.count} x {f.item.price}  ₽</p>
                     </div>
                 ))}
-            </div>
+            </div> </>
+            : <p>У вас пока нет заказов</p>}
         </div>
     </div>
     </>
