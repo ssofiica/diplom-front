@@ -5,6 +5,7 @@ import Button from '../components/button/button';
 import { mockNewOrders, mockKitchenOrders, mockReadyOrders } from './mock/orders';
 import axios from 'axios';
 import {url, types } from '../const/const'
+import { getTokenFromStorage } from './jwt/token';
 
 const mockOrders = [
     { status: 'Новые', items: [
@@ -47,10 +48,14 @@ const OrderPage: React.FC = () => {
 
   const fetchOrders = async (status: string) => {
     try {
+        const tkn = getTokenFromStorage()
         const resp = await axios.get(`${url}/order/mini-list`, {
             params: {
               status: status,
             },
+            headers: {
+                Authorization: `Bearer ${tkn}`,
+              },
         });
         if (resp.status === 200) {
             if (status === 'created') {
@@ -70,6 +75,13 @@ const OrderPage: React.FC = () => {
     fetchOrders('created');
     fetchOrders('accepted');
     fetchOrders('ready');
+
+    const intervalId = setInterval(async () => {
+        fetchOrders('created');
+        fetchOrders('accepted');
+        fetchOrders('ready');
+    }, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleItemClick = async (id: number, status: string) => {
@@ -82,7 +94,12 @@ const OrderPage: React.FC = () => {
 
   const getByID = async (id: number) => {
     try {
-        const resp = await axios.get(`${url}/order/${id}`);
+        const tkn = getTokenFromStorage()
+        const resp = await axios.get(`${url}/order/${id}`, {
+            headers: {
+              Authorization: `Bearer ${tkn}`,
+            },
+        });
         return resp
     } catch (error) {
         console.log("Ошибка в добавлении категории", error)
@@ -102,10 +119,14 @@ const OrderPage: React.FC = () => {
         status = 'finished'
     }
     try {
+        const tkn = getTokenFromStorage()
         const resp = await axios.put(`${url}/order/${id}`, null, {
             params: {
                 status: status,
             },
+            headers: {
+                Authorization: `Bearer ${tkn}`,
+              },
         });
         if (resp.status === 200) {
             if (selectedOrder.status === 'created') {
@@ -114,7 +135,7 @@ const OrderPage: React.FC = () => {
             } else if (selectedOrder.status === 'accepted') {
                 fetchOrders('ready');
                 fetchOrders('accepted');
-            } else if (selectedOrder.status === 'accepted') {
+            } else if (selectedOrder.status === 'ready') {
                 fetchOrders('ready');
             }
             setSelectedOrder('')
@@ -126,10 +147,14 @@ const OrderPage: React.FC = () => {
 
   const handleCancelOrder = async (id: number, status: string) => {
     try {
+        const tkn = getTokenFromStorage()
         const resp = await axios.put(`${url}/order/${id}`, null, {
             params: {
                 status: 'canceled',
             },
+            headers: {
+                Authorization: `Bearer ${tkn}`,
+              },
         });
         if (resp.status === 200) {
             fetchOrders(status)

@@ -8,6 +8,7 @@ import {url, types } from '../const/const'
 import { Chart, registerables } from 'chart.js';
 import RevenueChart from '../components/charts/line';
 import BarChartComponent from '../components/charts/bar';
+import { getTokenFromStorage } from './jwt/token';
 Chart.register(...registerables);
 
 
@@ -72,11 +73,15 @@ const AnalyticsPage: React.FC = () => {
 
   const fetchAnalytics = async () => {
     try {
+        const tkn = getTokenFromStorage()
         const resp = await axios.get(`${url}/analytics`, {
             params:{
                 "start": format(startDate, 'yyyy-MM-dd'),
                 "end": format(endDate, 'yyyy-MM-dd'),
             },
+            headers: {
+                Authorization: `Bearer ${tkn}`,
+              },
         });
         if (resp.status === 200) {
             console.log(resp.data.revenue.data)
@@ -173,7 +178,7 @@ const AnalyticsPage: React.FC = () => {
             <BarChartComponent 
                 data={topFood}
                 title="Популярные блюда"
-                xAxisLabel="Количество заказов"
+                // xAxisLabel="Количество заказов"
             />
         </div>
     </div>

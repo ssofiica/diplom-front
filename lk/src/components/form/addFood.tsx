@@ -106,7 +106,7 @@ const AddFoodModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, title, 
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
-            <img src={image} alt='Фото блюда' style={{height: '100%'}}/>
+            <img src={image} alt='Фото блюда' style={{height: '100%', width: '220px', objectFit: 'cover'}}/>
             {isHovered && (
             <img
               src={edit}

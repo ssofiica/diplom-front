@@ -1,20 +1,31 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './css/nav.css'
 
 const Header: React.FC = () => {
+    const navigate = useNavigate();
+    const handleLogout = () => {
+        localStorage.clear();
+        navigate("/login")
+    };
+
     return (
         <header style={styles.header}>
-            <div style={styles.logo}>Название</div>
+            <div style={styles.logo}>  </div>
             <nav className="nav">
                 <Link to="/menu" className="link">Меню</Link>
                 <Link to="/order" className="link">Заказы</Link>
                 <Link to="/analytics" className="link">Аналитика</Link>
             </nav>
+            <div style={{display: 'flex', alignItems: 'baseline'}}>
             <Link to="/info">
                 <button>Профиль</button>
             </Link>
-    </header>
+            <div onClick={handleLogout} style={{marginLeft: '10px', cursor: 'pointer', color: 'red', textAlign: 'right' }}>
+              Выйти
+            </div>
+            </div>
+        </header>
     );
 };
 
@@ -34,6 +45,7 @@ const styles = {
     logo: {
         fontSize: '20px',
         fontWeight: 'bold',
+        width: '90px',
     } as React.CSSProperties,
 };
 

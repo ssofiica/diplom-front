@@ -138,6 +138,12 @@ const MainPage: React.FC = () => {
         fetchMenu();
         fetchBasket();
         fetchCurrent();
+
+        const intervalId = setInterval(async () => {
+            fetchInfo();
+            fetchCurrent();
+        }, 5000);
+        return () => clearInterval(intervalId);
     }, []);
     
     const getCountInBasket = (foodId:  number) => {

@@ -11,6 +11,7 @@ import axios from 'axios';
 import AcceptModal from '../components/form/accept';
 import SelectBox from '../components/dropdown/dropdown';
 import {minio, url} from '../const/const'
+import { checkAuth, getTokenFromStorage } from './jwt/token';
 
 const mockMenuData = [
   { id: 1, name: 'Пицца', restaurant_id: 1, items: [
@@ -30,6 +31,7 @@ const rest_id = 1
 const statusArr = [{ value: 'in', label: 'Активные' }, { value: 'stop', label: 'Стоп-лист' }]
 
 const MenuPage: React.FC = () => {
+  const [user, setUser] = useState<any>()
   const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
   const [isEditFoodModalOpen, setIsEditFoodModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -42,6 +44,7 @@ const MenuPage: React.FC = () => {
 
   const AddFood = async (dish: { name: string; weight: number; price: number; category: number; status: string, img: File | null }) => {
     try {
+      const tkn = getTokenFromStorage()
       const resp = await axios.post(`${url}/menu/food/add`, {
 	      name: dish.name,
 	      restaurant_id: rest_id,
@@ -49,6 +52,10 @@ const MenuPage: React.FC = () => {
         weight: dish.weight,
 	      price: dish.price,
 	      status: dish.status,
+      }, {
+        headers: {
+            Authorization: `Bearer ${tkn}`,
+        },
       });
       if (resp.status === 200) {
         const formData = new FormData();
@@ -106,7 +113,12 @@ const MenuPage: React.FC = () => {
       if (dish.status != selectedFood.status) body.status = dish.status;
       if (dish.category != selectedFood.category) body.category_id = dish.category; 
       console.log(body)
-      const resp = await axios.put(`${url}/menu/food/${id}/change`, body);
+      const tkn = getTokenFromStorage()
+      const resp = await axios.put(`${url}/menu/food/${id}/change`, body, {
+        headers: {
+          Authorization: `Bearer ${tkn}`,
+        },
+      });
       return resp
     } catch (error) {
       console.log("Ошибка в добавлении блюда", error)
@@ -132,9 +144,14 @@ const MenuPage: React.FC = () => {
 
   const addCategory = async (name: string, id: number) => {
     try {
+      const tkn = getTokenFromStorage()
       const resp = await axios.post(`${url}/menu/category/add`, {
         name: name,
         restaurant_id: id
+      }, {
+        headers: {
+          Authorization: `Bearer ${tkn}`,
+        },
       });
       return resp
     } catch (error) {
@@ -144,7 +161,12 @@ const MenuPage: React.FC = () => {
 
   const deleteFood = async (id: number) => {
     try {
-      const resp = await axios.delete(`${url}/menu/food/${id}`);
+      const tkn = getTokenFromStorage()
+      const resp = await axios.delete(`${url}/menu/food/${id}`, {
+        headers: {
+          Authorization: `Bearer ${tkn}`,
+        },
+      });
       return resp
     } catch (error) {
       console.log("Ошибка в удалении блюда", error)
@@ -155,17 +177,20 @@ const MenuPage: React.FC = () => {
     const response = await addCategory(name, rest_id);
     if (response?.status === 200) {
       // TODO: когда на бэке сделается dto, то тут надо уменьшить регистр
-      let newCategory = { id: response.data.Id, name: response.data.Name, items: []}
+      let newCategory = { id: response.data.ID, name: response.data.Name, items: []}
       setMenu((prevMenu) => [...prevMenu, newCategory]);
     }
   };
 
   const getByStatus = async (status: string) => {
     try {
+      const tkn = getTokenFromStorage()
       const resp = await axios.get(`${url}/menu/${activeCategoryIndex}`, {
         params: {
           status: status
-        }
+        }, headers: {
+          Authorization: `Bearer ${tkn}`,
+        },
       });
       return resp
     } catch (error) {
@@ -187,12 +212,17 @@ const MenuPage: React.FC = () => {
 
   const fetchMenu = async () => {
     try {
-      const resp = await axios.get(`${url}/menu/category-list`)
+      const tkn = getTokenFromStorage()
+      const resp = await axios.get(`${url}/menu/category-list`, {
+        headers: {
+          Authorization: `Bearer ${tkn}`,
+        },
+      })
       if (resp?.status === 200){
         setMenu(resp.data)
         setSelectedCategory(resp.data[0])
-        setActiveCategoryIndex(resp.data[0].id)
-        const response = await getFoodByCategory(resp.data[0].id)
+        setActiveCategoryIndex(resp.data[0]?.id)
+        const response = await getFoodByCategory(resp.data[0]?.id)
         console.log(response?.data)
         if (response?.status === 200){
           setSelectedCategory((prev: any) => ({...prev, items: response.data}));
@@ -204,21 +234,33 @@ const MenuPage: React.FC = () => {
   };
   
   useEffect(() => {
+      const {isAuthenticated, data, token} = checkAuth();
+      console.log(isAuthenticated, data, token)
+      if (isAuthenticated && token) {
+        // setIsAuth(true)
+        setUser(data)
+      }
       fetchMenu();
   }, []);
 
-  const handleItemClick = async (id: number) => {
+  const handleItemClick = async (name: string, id: number) => {
     setActiveCategoryIndex(id)
     const resp = await getFoodByCategory(id)
     if (resp?.status === 200){
-      setSelectedCategory((prev: any) => ({...prev, items: resp.data}));
+      setSelectedCategory((prev: any) => ({...prev, name: name, items: resp.data}));
       setStatus(status)
     }
   };
 
   const getFoodByCategory = async (id: number) => {
+    console.log(menu, activeCategoryIndex)
     try {
-      const resp = await axios.get(`${url}/menu/${id}`);
+      const tkn = getTokenFromStorage()
+      const resp = await axios.get(`${url}/menu/${id}`, {
+        headers: {
+          Authorization: `Bearer ${tkn}`,
+        },
+      });
       return resp
     } catch (error) {
       console.log("Ошибка в получении блюд категории", error)
@@ -227,8 +269,13 @@ const MenuPage: React.FC = () => {
 
   const changeFoodStatus = async (id: number, status: string) => {
     try {
+      const tkn = getTokenFromStorage()
       const resp = await axios.put(`${url}/menu/food/${id}/status`, {
           status: status
+      }, {
+        headers: {
+          Authorization: `Bearer ${tkn}`,
+        },
       });
       return resp
     } catch (error) {
@@ -272,8 +319,8 @@ const MenuPage: React.FC = () => {
             onSubmit={handleAddCategory}
         />
         <div className="categories">
-        {menu.map((item: any) => (
-          <div key={item.id} onClick={() => handleItemClick(item.id)}>
+        {menu?.map((item: any) => (
+          <div key={item.id} onClick={() => handleItemClick(item.name, item.id)}>
             <p className="category" style={{
             backgroundColor: activeCategoryIndex === item.id ? '#f4f4f4' : '#fff',
             width: activeCategoryIndex === item.id ? '10em' : '100%',
@@ -285,7 +332,7 @@ const MenuPage: React.FC = () => {
       </div>
       <div className="right">
         <div style={{display: 'flex', justifyContent: 'space-between'}}>
-          <p style={{fontSize: '20px', marginBottom: '20px'}}>{selectedCategory.name}</p>
+          <p style={{fontSize: '20px', marginBottom: '20px'}}>{selectedCategory?.name}</p>
           <div>
             <SelectBox
               options={statusArr}
@@ -312,7 +359,7 @@ const MenuPage: React.FC = () => {
             <p className="th-style"> </p>
             <p className="th-style"> </p>
           </div>
-          {selectedCategory.items?.map((item:any) => (
+          {selectedCategory?.items?.map((item:any) => (
             <div key={item.id} className="row">
               <img className="img" src={minio+item.img_url} alt='Фотка'></img>
               <p className="row-style" style={{paddingLeft: '5px'}}>{item.name}</p>

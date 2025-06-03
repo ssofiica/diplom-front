@@ -127,7 +127,7 @@ const ProfilePage: React.FC = () => {
                     {selectedOrder.address && <p style={{color: '#2e2e2e'}}>: {selectedOrder.address}</p>}
                 </div>
                 {selectedOrder.comment && (<>
-                    <p style={{marginTop: '5px'}}>Комментарий:</p>
+                    <p style={{marginTop: '5px', color:'#7b7b7b'}}>Комментарий:</p>
                     <p>{selectedOrder.comment}</p>
                 </>)}
             </div>

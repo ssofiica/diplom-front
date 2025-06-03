@@ -4,6 +4,7 @@ import {mockDescripArr, mockSchedule} from './mock/info'
 import Button from "../components/button/button";
 import axios from "axios";
 import {url, minio} from '../const/const'
+import { getTokenFromStorage } from "./jwt/token";
 
 const MAX_LENGTH=400;
 const rest_id = 1
@@ -41,7 +42,12 @@ const InfoPage: React.FC = () => {
 
   const fetchInfo = async () => {
     try {
-      const response = await axios.get(`${url}/info`)
+      const tkn = getTokenFromStorage()
+      const response = await axios.get(`${url}/info`, {
+        headers: {
+          Authorization: `Bearer ${tkn}`,
+        },
+      })
       if (response.status === 200) {
         console.log(response.data)
         setName(response.data.name)
@@ -81,7 +87,12 @@ const InfoPage: React.FC = () => {
       console.log(oldBase?.email, email)
       console.log(body)
       if (Object.keys(body).length > 0) {
-        const resp = await axios.post(`${url}/info/base`, body);
+        const tkn = getTokenFromStorage()
+        const resp = await axios.post(`${url}/info/base`, body, {
+          headers: {
+            Authorization: `Bearer ${tkn}`,
+          },
+        });
         return resp
       }
       return
@@ -95,8 +106,10 @@ const InfoPage: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('logo_url', logoFile)
+      const tkn = getTokenFromStorage()
       const resp = await axios.post(`${url}/info/upload-logo`, formData, {headers: {
         'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${tkn}`,
       }});
       return resp
     } catch (error) {
@@ -149,9 +162,11 @@ const InfoPage: React.FC = () => {
         console.log(changedImgs)
       }
 
+      const tkn = getTokenFromStorage()
       const resp = await axios.post(`${url}/info/site-content`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${tkn}`,
         },
       });
       return resp
@@ -273,12 +288,14 @@ const InfoPage: React.FC = () => {
 
   return (
     <div className="info">
-      <div style={{display: 'flex', gap: '2em'}}>
+      <p style={{fontSize: 20}}>Профиль</p>
+      <div style={{display: 'flex', gap: '2em', marginBottom: '30px'}}>
         <p 
           onClick={() => setActiveTab('data')}
           className="tab"
           style={{
-            fontWeight: activeTab === 'data' ? '500' : '',
+            fontWeight: activeTab === 'data' ? '600' : '',
+            color: activeTab === 'data' ? '#161E86' : '',
           }}>
             Данные
         </p>
@@ -286,16 +303,18 @@ const InfoPage: React.FC = () => {
            className="tab"
            style={{
             fontWeight: activeTab === 'description' ? '500' : '',
+            color: activeTab === 'description' ? '#161E86' : '',
           }}>
           Содержимое сайта
         </p>
-        <p onClick={() => setActiveTab('schedule')} 
+        {/* <p onClick={() => setActiveTab('schedule')} 
            className="tab"
            style={{
             fontWeight: activeTab === 'schedule' ? '500' : '',
+            color: activeTab === 'schedule' ? '#161E86' : '',
           }}>
           Расписание
-        </p>
+        </p> */}
       </div>
       <div>
         {activeTab === 'description' && 
@@ -374,7 +393,7 @@ const InfoPage: React.FC = () => {
               <Button onClick={() => logoInputRef.current?.click()}>Загрузить логотип</Button>
             </div>
             <div>
-              <p style={{marginBottom: '0.6em', fontSize: '16px'}}>Название заведения</p>
+              <p style={{marginTop: '20px', marginBottom: '0.6em', fontSize: '16px'}}>Название заведения</p>
               <input
                 type="text"
                 value={name}
@@ -401,7 +420,7 @@ const InfoPage: React.FC = () => {
                 className="input"
               />
             </div>
-            <Button onClick={handleSaveBase}>Сохранить</Button>
+            <Button style={{ marginTop: '10px'}}onClick={handleSaveBase}>Сохранить</Button>
           </div>}
         {activeTab === 'schedule' && 
           <div className="tab-content">
